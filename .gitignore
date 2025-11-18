@@ -1,0 +1,16 @@
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+.pub-cache/
+.pub/
+
+# Node.js
+node_modules/
+npm-debug.log
+
+# Configuración local y secretos
+.env
+.DS_Store
+.vscode/
