@@ -1,7 +1,7 @@
 class CardModel {
   final String id;
   final String name;
-  final String type; // Ej: Character
+  final String type; 
   final String color;
   final String imageUrl;
   final String cardNumber;
@@ -11,7 +11,6 @@ class CardModel {
   final String cardText;
   final String counter;
   
-  // NUEVO: Subtipos (Familias/Tags)
   final List<String> subTypes;
   
   final List<CardModel> versions;
@@ -40,7 +39,6 @@ class CardModel {
       });
     }
 
-    // Lógica para leer subtipos (puede venir como lista o null)
     List<String> parsedSubTypes = [];
     if (json['sub_types'] != null) {
       if (json['sub_types'] is List) {
@@ -62,7 +60,7 @@ class CardModel {
       cost: json['card_cost']?.toString() ?? '-',
       cardText: json['card_text'] ?? 'Sin efecto',
       counter: json['counter_amount']?.toString() ?? '-',
-      subTypes: parsedSubTypes, // Asignamos los tipos
+      subTypes: parsedSubTypes, 
       versions: versionsList,
     );
   }

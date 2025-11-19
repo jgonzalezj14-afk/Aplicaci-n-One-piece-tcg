@@ -34,7 +34,6 @@ class ApiService {
         final jsonResponse = jsonDecode(response.body);
         
         final List<dynamic> dataList = jsonResponse['data'] ?? [];
-        // Leemos el total de páginas, si no viene, asumimos 1
         final int totalPages = jsonResponse['totalPages'] ?? 1; 
 
         final List<CardModel> cards = dataList

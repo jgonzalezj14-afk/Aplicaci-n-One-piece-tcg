@@ -59,7 +59,6 @@ class _CardsPageState extends State<CardsPage> {
     _fetchCards();
   }
 
-  // --- WIDGETS ---
 
   Widget _buildSearchBar() {
     return Container(
@@ -87,7 +86,6 @@ class _CardsPageState extends State<CardsPage> {
     );
   }
 
-  // WIDGET DE FILTROS RECUPERADO
   Widget _buildFilters() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
@@ -288,7 +286,7 @@ class _CardsPageState extends State<CardsPage> {
       body: Column(
         children: [
           _buildSearchBar(),
-          _buildFilters(), // ¡FILTROS AÑADIDOS!
+          _buildFilters(), 
           Expanded(child: _buildGrid()),
           _buildPagination(),
         ],
