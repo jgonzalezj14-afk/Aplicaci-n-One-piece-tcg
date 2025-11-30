@@ -9,9 +9,25 @@ const API_BASE_URL = "https://www.optcgapi.com";
 app.use(cors({ origin: "*", methods: ["GET", "POST"], allowedHeaders: ["*"] }));
 app.use(express.json());
 
+app.get("/proxy_image", async (req, res) => {
+  const imageUrl = req.query.url;
+  if (!imageUrl) return res.status(400).send("Falta URL");
+
+  try {
+    const response = await axios({
+      method: 'get',
+      url: imageUrl,
+      responseType: 'stream'
+    });
+    response.data.pipe(res);
+  } catch (error) {
+    res.status(404).send("Imagen no encontrada");
+  }
+});
+
 app.get("/onepiece", async (req, res) => {
   try {
-    const { name, color, type, page = 1, pageSize = 20 } = req.query;
+    const { name, color, type, set, page = 1, pageSize = 20 } = req.query;
     const pageNum = parseInt(page);
     const limitNum = parseInt(pageSize);
 
@@ -20,14 +36,15 @@ app.get("/onepiece", async (req, res) => {
     let rawCards = response.data;
 
     rawCards = rawCards.map(card => {
-      if (card.card_image && !card.card_image.startsWith("http")) {
-        card.card_image = API_BASE_URL + card.card_image;
+      let originalUrl = card.card_image;
+      if (originalUrl && !originalUrl.startsWith("http")) {
+        originalUrl = API_BASE_URL + originalUrl;
       }
+      card.card_image = `http://localhost:${PORT}/proxy_image?url=${encodeURIComponent(originalUrl)}`;
       return card;
     });
 
     const groupedMap = new Map();
-
     rawCards.forEach(card => {
         const id = card.card_set_id;
         if (!groupedMap.has(id)) {
@@ -36,30 +53,47 @@ app.get("/onepiece", async (req, res) => {
             groupedMap.get(id).versions.push(card);
         }
     });
-
- 
     let cards = Array.from(groupedMap.values());
 
-    
+   
     if (name) {
-      const nameLower = name.toLowerCase();
-      cards = cards.filter(c => c.card_name && c.card_name.toLowerCase().includes(nameLower));
+      const searchTerm = name.trim();
+      
+      
+      const isNumber = /^\d+$/.test(searchTerm);
+
+      if (isNumber) {
+        console.log(`🔎 Buscando por COSTE: ${searchTerm}`);
+        cards = cards.filter(c => {
+           
+            return c.card_cost && c.card_cost.toString() === searchTerm;
+        });
+      } else {
+        console.log(`🔎 Buscando por NOMBRE: ${searchTerm}`);
+        const nameLower = searchTerm.toLowerCase();
+        cards = cards.filter(c => c.card_name && c.card_name.toLowerCase().includes(nameLower));
+      }
     }
+
     if (color && color !== 'All') {
       cards = cards.filter(c => c.card_color && c.card_color.toLowerCase() === color.toLowerCase());
     }
     if (type && type !== 'All') {
       cards = cards.filter(c => c.card_type && c.card_type.toLowerCase() === type.toLowerCase());
     }
+    if (set && set !== 'All') {
+      const cleanSet = set.replace('-', '');
+      cards = cards.filter(c => c.card_set_id && c.card_set_id.startsWith(cleanSet));
+    }
 
-    
     const totalCards = cards.length;
     const totalPages = Math.ceil(totalCards / limitNum);
     const startIndex = (pageNum - 1) * limitNum;
     const endIndex = pageNum * limitNum;
+    
     const paginatedCards = cards.slice(startIndex, endIndex);
 
-    console.log(`✅ Pág ${pageNum}/${totalPages}: Enviando ${paginatedCards.length} grupos de cartas.`);
+    console.log(`✅ Pág ${pageNum}/${totalPages}: Enviando ${paginatedCards.length} cartas.`);
     
     res.json({
       data: paginatedCards,
@@ -75,5 +109,5 @@ app.get("/onepiece", async (req, res) => {
 
 const PORT = 6090;
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(` Servidor Agrupador LISTO en: http://localhost:${PORT}/onepiece`);
+  console.log(`🚀 Servidor LISTO en: http://localhost:${PORT}/onepiece`);
 });

@@ -22,179 +22,195 @@ class _CardDetailPageState extends State<CardDetailPage> {
     setState(() => _displayCard = newCard);
   }
 
-  // NUEVA FUNCIÓN: Obtener colores para degradado de App Bar
-  List<Color> _getAppBarColors(String colorName) {
-    final colors = colorName.toLowerCase().split(' ');
-    List<Color> appBarColors = [];
-
-    for (var c in colors) {
-      if (c.contains('red')) appBarColors.add(Colors.redAccent[700]!);
-      else if (c.contains('green')) appBarColors.add(Colors.green[700]!);
-      else if (c.contains('blue')) appBarColors.add(Colors.blue[700]!);
-      else if (c.contains('purple')) appBarColors.add(Colors.purple[700]!);
-      else if (c.contains('yellow')) appBarColors.add(Colors.amber[700]!);
-      else if (c.contains('black')) appBarColors.add(Colors.grey[800]!);
-    }
-    
-    if (appBarColors.isEmpty) return [Colors.grey[800]!, Colors.grey[900]!]; // Default
-    if (appBarColors.length == 1) return [appBarColors[0], appBarColors[0].withOpacity(0.7)]; // Single color gradient
-    return appBarColors; // Multiple colors for gradient
-  }
-
-  Color _getCardColor(String colorName) {
+  List<Color> _getAppBarGradient(String colorName) {
     final c = colorName.toLowerCase();
-    if (c.contains('red')) return Colors.redAccent;
-    if (c.contains('green')) return Colors.green;
-    if (c.contains('blue')) return Colors.blue;
-    if (c.contains('purple')) return Colors.purpleAccent;
-    if (c.contains('yellow')) return Colors.amber;
-    if (c.contains('black')) return Colors.grey[800]!;
-    return Colors.grey;
+    List<Color> colors = [];
+    if (c.contains('red')) colors.add(Colors.red[900]!);
+    if (c.contains('green')) colors.add(Colors.green[900]!);
+    if (c.contains('blue')) colors.add(Colors.blue[900]!);
+    if (c.contains('purple')) colors.add(Colors.purple[900]!);
+    if (c.contains('yellow')) colors.add(Colors.amber[800]!);
+    if (c.contains('black')) colors.add(Colors.grey[900]!);
+    
+    if (colors.isEmpty) return [Colors.grey[800]!, Colors.black];
+    if (colors.length == 1) return [colors[0], colors[0].withOpacity(0.7)];
+    return colors;
   }
 
-  // Helper para mostrar el Coste o 0
-  String _getCostValue(String cost) {
-    return (cost == '-' || cost.toLowerCase() == 'null') ? '0' : cost;
+  String _formatValue(String val) {
+    if (val == 'NULL' || val.trim() == '-') return '0';
+    return val;
+  }
+
+  Widget _buildImagePlaceholder({required double height, bool isSmall = false}) {
+    return Container(
+      height: height,
+      width: isSmall ? 50 : null,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(isSmall ? 4 : 12),
+        border: Border.all(color: Colors.white24, width: 1),
+      ),
+      child: Center(
+        child: isSmall
+            ? const Icon(Icons.image_not_supported_outlined, color: Colors.white24, size: 20)
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.image_not_supported_outlined, size: 60, color: Colors.white12),
+                  const SizedBox(height: 10),
+                  Text("Arte no disponible", style: TextStyle(color: Colors.white24, fontFamily: 'serif', fontSize: 14)),
+                  Text(_displayCard.cardNumber, style: TextStyle(color: Colors.amber.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.bold)),
+                ],
+              ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final allVersions = [widget.card, ...widget.card.versions];
-    final cardColor = _getCardColor(_displayCard.color);
-    final appBarColors = _getAppBarColors(_displayCard.color);
+    final gradientColors = _getAppBarGradient(_displayCard.color);
 
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(_displayCard.cardNumber),
-        // AHORA LA APP BAR ES UN DEGRADADO DE LOS COLORES DE LA CARTA
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: appBarColors,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
+        title: Text(_displayCard.cardNumber, style: const TextStyle(fontWeight: FontWeight.bold)),
+        flexibleSpace: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: gradientColors))),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 1. HEADER VISUAL
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+              padding: const EdgeInsets.symmetric(vertical: 20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [cardColor.withOpacity(0.6), Colors.black],
+                  colors: [gradientColors.first.withOpacity(0.4), Colors.black],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
               ),
               child: Column(
                 children: [
+                  Hero(
+                    tag: _displayCard.id,
+                    child: Image.network(
+                      _displayCard.imageUrl,
+                      height: 350,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (c, child, p) => p == null ? child : const CircularProgressIndicator(color: Colors.white),
+                      errorBuilder: (context, error, stackTrace) => _buildImagePlaceholder(height: 350),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                   Text(
                     _displayCard.name,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, fontFamily: 'serif', shadows: [Shadow(color: Colors.black, blurRadius: 10, offset: Offset(2, 2))]),
+                    style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, fontFamily: 'serif', letterSpacing: 1.2),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 5),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                    decoration: BoxDecoration(border: Border.all(color: Colors.white), borderRadius: BorderRadius.circular(20)),
-                    child: Text(_displayCard.type.toUpperCase(), style: const TextStyle(color: Colors.white, letterSpacing: 2, fontWeight: FontWeight.bold)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(border: Border.all(color: Colors.white54), borderRadius: BorderRadius.circular(20)),
+                    child: Text(_displayCard.type.toUpperCase(), style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2)),
                   ),
                 ],
               ),
             ),
 
-            // 2. SELECTOR DE VERSIONES
             if (allVersions.length > 1)
               Container(
-                height: 50,
-                margin: const EdgeInsets.symmetric(vertical: 10),
-                child: ListView.builder(
+                height: 100,
+                margin: const EdgeInsets.only(bottom: 20),
+                child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   itemCount: allVersions.length,
+                  separatorBuilder: (c, i) => const SizedBox(width: 15),
                   itemBuilder: (context, index) {
                     final v = allVersions[index];
-                    final isSelected = v.id == _displayCard.id;
+                    final isSelected = v.imageUrl == _displayCard.imageUrl;
                     return GestureDetector(
                       onTap: () => _swapCard(v),
-                      child: Container(
-                        width: 50, margin: const EdgeInsets.only(right: 10),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: isSelected ? cardColor : Colors.grey[900],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: isSelected ? Colors.white : Colors.white24),
-                        ),
-                        child: Text("V${index + 1}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: Column(
+                        children: [
+                          Container(
+                            height: 70, width: 50,
+                            decoration: BoxDecoration(border: isSelected ? Border.all(color: Colors.amber, width: 3) : Border.all(color: Colors.white24), borderRadius: BorderRadius.circular(4)),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(2),
+                              child: Image.network(v.imageUrl, fit: BoxFit.cover, errorBuilder: (c,e,s) => _buildImagePlaceholder(height: 70, isSmall: true)),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text("V${index + 1}", style: TextStyle(color: isSelected ? Colors.amber : Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                        ],
                       ),
                     );
                   },
                 ),
               ),
 
-            // 3. DETALLES Y TIPOS
             Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _StatCircle(label: "Coste", value: _formatValue(_displayCard.cost), color: Colors.blueGrey),
+                  _StatCircle(label: "Poder", value: _formatValue(_displayCard.power), color: Colors.redAccent),
+                  _StatCircle(label: "Counter", value: _formatValue(_displayCard.counter), color: Colors.green),
+                ],
+              ),
+            ),
+
+            Container(
+              margin: const EdgeInsets.all(20),
               padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.white12)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // STATS
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _StatCircle(label: "Coste", value: _getCostValue(_displayCard.cost), color: Colors.blueGrey), // Coste ahora muestra 0
-                      _StatCircle(label: "Poder", value: _displayCard.power, color: Colors.redAccent),
-                      _StatCircle(label: "Counter", value: _displayCard.counter, color: Colors.green),
-                    ],
-                  ),
-                  const SizedBox(height: 25),
-
-                  // SECCIÓN: TIPOS/FAMILIAS
+                  
                   if (_displayCard.subTypes.isNotEmpty) ...[
-                    const Text("FAMILIAS / TIPOS", style: TextStyle(color: Colors.grey, fontSize: 12, letterSpacing: 2)),
+                    const Text("FAMILIAS", style: TextStyle(color: Colors.grey, fontSize: 10, letterSpacing: 2)),
                     const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _displayCard.subTypes.map((type) => Chip(
-                        // FONDO TRANSPARENTE, BORDE BLANCO, TEXTO BLANCO
-                        backgroundColor: Colors.transparent,
-                        labelStyle: const TextStyle(color: Colors.white),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: const BorderSide(color: Colors.white54, width: 1),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                      decoration: BoxDecoration(
+                        color: Colors.white24, 
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _displayCard.subTypes.join(" / "), 
+                        style: const TextStyle(
+                          color: Colors.white, 
+                          fontSize: 14, 
+                          fontWeight: FontWeight.bold
                         ),
-                        label: Text(type),
-                      )).toList(),
+                      ),
                     ),
-                    const SizedBox(height: 25),
+                    const Divider(color: Colors.white24, height: 30),
                   ],
 
-                  // EFECTO
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white24)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("EFECTO", style: TextStyle(color: Colors.grey, fontSize: 12, letterSpacing: 2)),
-                        const SizedBox(height: 10),
-                        Text(_displayCard.cardText.isEmpty ? "Sin efecto." : _displayCard.cardText, style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.5)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  _InfoRow(label: "ID Set", value: _displayCard.cardNumber),
-                  _InfoRow(label: "Rareza", value: _displayCard.rarity),
-                  _InfoRow(label: "Color", value: _displayCard.color),
+                  const Text("EFECTO", style: TextStyle(color: Colors.grey, fontSize: 10, letterSpacing: 2)),
+                  const SizedBox(height: 8),
+                  Text(_displayCard.cardText.isEmpty ? "Sin efecto." : _displayCard.cardText, style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.5)),
+                ],
+              ),
+            ),
+            
+            Padding(
+              padding: const EdgeInsets.only(bottom: 30),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("ID: ${_displayCard.cardNumber}", style: const TextStyle(color: Colors.grey)),
+                  const SizedBox(width: 20),
+                  Text("Rareza: ${_displayCard.rarity}", style: const TextStyle(color: Colors.amber)),
                 ],
               ),
             ),
@@ -215,32 +231,13 @@ class _StatCircle extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 60, height: 60, alignment: Alignment.center,
-          decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: color, width: 3)),
+          width: 55, height: 55, alignment: Alignment.center,
+          decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: color, width: 2), color: Colors.black, boxShadow: [BoxShadow(color: color.withOpacity(0.4), blurRadius: 8)]),
           child: Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
         ),
-        const SizedBox(height: 5),
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        const SizedBox(height: 6),
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
       ],
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  const _InfoRow({required this.label, required this.value});
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        ],
-      ),
     );
   }
 }

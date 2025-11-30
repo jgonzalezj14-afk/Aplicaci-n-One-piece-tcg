@@ -12,10 +12,19 @@ class CardsPage extends StatefulWidget {
 
 class _CardsPageState extends State<CardsPage> {
   final ApiService _apiService = ApiService();
+  final ScrollController _scrollController = ScrollController();
   
   String _searchQuery = '';
   String _selectedColor = 'All';
   String _selectedType = 'All';
+  String _selectedSet = 'All';
+
+  final List<String> _sets = [
+    'All',
+    'OP-01', 'OP-02', 'OP-03', 'OP-04', 'OP-05', 
+    'OP-06', 'OP-07', 'OP-08', 'OP-09', 'OP-10', 
+    'OP-11', 'OP-12', 'OP-13'
+  ];
 
   List<CardModel> _cards = [];
   bool _isLoading = false;
@@ -24,13 +33,20 @@ class _CardsPageState extends State<CardsPage> {
 
   final Color _woodColor = const Color(0xFF2D1E18); 
   final Color _goldColor = const Color(0xFFFFC107);
-  final Color _parchmentColor = const Color(0xFFFFF8E1);
+  final Color _parchmentColor = const Color(0xFFFFF8E1); 
   final Color _pirateRed = const Color(0xFFD32F2F);
+  final Color _activePageColor = const Color(0xFF4FC3F7); 
 
   @override
   void initState() {
     super.initState();
     _fetchCards();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchCards() async {
@@ -40,12 +56,19 @@ class _CardsPageState extends State<CardsPage> {
         query: _searchQuery,
         color: _selectedColor,
         type: _selectedType,
+        set: _selectedSet,
         page: _page,
       );
-      setState(() {
-        _cards = result['cards'];
-        _totalPages = result['totalPages'];
-      });
+      
+      if (mounted) {
+        setState(() {
+          _cards = result['cards'];
+          _totalPages = result['totalPages'];
+        });
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+        }
+      }
     } catch (e) {
       print('Error: $e');
     } finally {
@@ -77,51 +100,14 @@ class _CardsPageState extends State<CardsPage> {
           prefixIcon: Icon(Icons.search, color: Colors.white54),
           contentPadding: EdgeInsets.symmetric(vertical: 15),
         ),
-        onSubmitted: (val) { 
-          _searchQuery = val; 
-          _page = 1; 
-          _fetchCards(); 
-        },
+        onSubmitted: (val) { _searchQuery = val; _page = 1; _fetchCards(); },
       ),
     );
   }
 
-  Widget _buildFilters() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildDropdown(
-              _selectedType, 
-              ['All', 'Leader', 'Character', 'Event', 'Stage'], 
-              (val) {
-                setState(() => _selectedType = val!);
-                _page = 1;
-                _fetchCards();
-              }
-            )
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _buildDropdown(
-              _selectedColor, 
-              ['All', 'Red', 'Blue', 'Green', 'Purple', 'Black', 'Yellow'], 
-              (val) {
-                setState(() => _selectedColor = val!);
-                _page = 1;
-                _fetchCards();
-              }
-            )
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDropdown(String value, List<String> items, Function(String?) onChanged) {
+  Widget _buildDropdown(String value, List<String> items, String hint, Function(String?) onChanged) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         color: Colors.black38,
         borderRadius: BorderRadius.circular(8),
@@ -130,17 +116,39 @@ class _CardsPageState extends State<CardsPage> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
+          isExpanded: true,
+          hint: Text(hint, style: TextStyle(color: Colors.white54)),
           dropdownColor: _woodColor,
           icon: Icon(Icons.arrow_drop_down, color: _goldColor),
-          style: TextStyle(color: _parchmentColor, fontWeight: FontWeight.bold),
-          items: items.map((item) {
-            return DropdownMenuItem(
-              value: item,
-              child: Text(item),
-            );
-          }).toList(),
+          style: TextStyle(color: _parchmentColor, fontWeight: FontWeight.bold, fontSize: 12),
+          items: items.toSet().toList().map((i) => DropdownMenuItem(value: i, child: Text(i, overflow: TextOverflow.ellipsis))).toList(),
           onChanged: onChanged,
         ),
+      ),
+    );
+  }
+
+  Widget _buildFilters() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(flex: 3, child: _buildDropdown(_selectedType, ['All', 'Leader', 'Character', 'Event', 'Stage'], 'Tipo', (v) { setState(() => _selectedType = v!); _page=1; _fetchCards(); })),
+              const SizedBox(width: 10),
+              Expanded(flex: 2, child: _buildDropdown(_selectedColor, ['All', 'Red', 'Blue', 'Green', 'Purple', 'Black', 'Yellow'], 'Color', (v) { setState(() => _selectedColor = v!); _page=1; _fetchCards(); })),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Text("Set: ", style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 10),
+              Expanded(child: _buildDropdown(_selectedSet, _sets, 'Colección', (v) { setState(() => _selectedSet = v!); _page=1; _fetchCards(); })),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -149,84 +157,73 @@ class _CardsPageState extends State<CardsPage> {
     if (_isLoading) return Center(child: CircularProgressIndicator(color: _goldColor));
     if (_cards.isEmpty) return const Center(child: Text('Sin resultados', style: TextStyle(color: Colors.white)));
 
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4, 
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.70,
-      ),
-      itemCount: _cards.length,
-      itemBuilder: (context, index) {
-        final card = _cards[index];
-        return GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CardDetailPage(card: card))),
-          
-          child: Container(
-            decoration: BoxDecoration(
-              color: _parchmentColor,
-              borderRadius: BorderRadius.circular(4),
-              boxShadow: [const BoxShadow(color: Colors.black54, blurRadius: 4, offset: Offset(2, 2))],
-              border: Border.all(color: const Color(0xFF5D4037), width: 2),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  color: _pirateRed,
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text(
-                    "WANTED",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: _goldColor, fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 2),
+    return RawScrollbar(
+      thumbVisibility: true,
+      controller: _scrollController,
+      thumbColor: _goldColor.withOpacity(0.8),
+      thickness: 10,
+      radius: const Radius.circular(20),
+      trackVisibility: true,
+      trackColor: Colors.black26,
+      child: GridView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.only(left: 12, top: 12, bottom: 12, right: 20),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4, 
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.70, 
+        ),
+        itemCount: _cards.length,
+        itemBuilder: (context, index) {
+          final card = _cards[index];
+          return GestureDetector(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CardDetailPage(card: card))),
+            child: Hero(
+              tag: card.id,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [const BoxShadow(color: Colors.black54, blurRadius: 4, offset: Offset(2, 2))],
+                  image: DecorationImage(
+                    image: NetworkImage(card.imageUrl),
+                    fit: BoxFit.cover,
+                    onError: (e,s) {}, 
                   ),
+                  color: Colors.grey[800],
                 ),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          card.name.toUpperCase(),
+                child: Stack(
+                  children: [
+                    if (card.versions.isNotEmpty)
+                      Positioned(
+                        top: 4, right: 4,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                          child: Text("+${card.versions.length}", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    Positioned(
+                      bottom: 0, left: 0, right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        color: Colors.black.withOpacity(0.7),
+                        child: Text(
+                          card.name,
                           textAlign: TextAlign.center,
-                          maxLines: 3,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.black87, fontFamily: 'serif', fontWeight: FontWeight.w900, fontSize: 13),
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, decoration: TextDecoration.none),
                         ),
-                        const SizedBox(height: 4),
-                        const Divider(color: Colors.black26, thickness: 1, indent: 10, endIndent: 10),
-                        const SizedBox(height: 4),
-                        Text(
-                          card.type,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey[800], fontSize: 9, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          card.color,
-                          style: TextStyle(color: Colors.grey[600], fontSize: 8),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-                Container(
-                  padding: const EdgeInsets.all(4.0),
-                  color: const Color(0xFFD7CCC8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(card.cardNumber, style: TextStyle(fontSize: 8, color: Colors.grey[900], fontWeight: FontWeight.bold)),
-                      Text("P: ${card.power}", style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.black)),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -234,41 +231,68 @@ class _CardsPageState extends State<CardsPage> {
     if (_totalPages <= 1) return const SizedBox.shrink();
     List<Widget> pageButtons = [];
     
-    pageButtons.add(IconButton(
-      icon: const Icon(Icons.chevron_left, color: Colors.white),
-      onPressed: _page > 1 ? () => _goToPage(_page - 1) : null,
-    ));
+    pageButtons.add(IconButton(icon: const Icon(Icons.chevron_left, color: Colors.white), onPressed: _page > 1 ? () => _goToPage(_page - 1) : null));
 
-    for (int i = 0; i < 4; i++) {
-      int p = _page + i;
-      if (p > _totalPages) break;
-      pageButtons.add(
-        GestureDetector(
-          onTap: () => _goToPage(p),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            width: 35, height: 35,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: p == _page ? _goldColor : Colors.white10,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: p == _page ? _goldColor : Colors.white24),
-            ),
-            child: Text("$p", style: TextStyle(color: p == _page ? Colors.black : Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        )
-      );
+    List<int> pagesToShow = [];
+    pagesToShow.add(1); 
+    for (int i = _page - 1; i <= _page + 1; i++) {
+      if (i > 1 && i < _totalPages) pagesToShow.add(i);
+    }
+    if (_totalPages > 1) pagesToShow.add(_totalPages); 
+    pagesToShow = pagesToShow.toSet().toList()..sort();
+
+    int previous = 0;
+    for (int p in pagesToShow) {
+      if (previous > 0 && p - previous > 1) {
+        pageButtons.add(const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: Text("...", style: TextStyle(color: Colors.white54)),
+        ));
+      }
+      pageButtons.add(_buildPageNumber(p, p == _page));
+      previous = p;
     }
 
-    pageButtons.add(IconButton(
-      icon: const Icon(Icons.chevron_right, color: Colors.white),
-      onPressed: _page < _totalPages ? () => _goToPage(_page + 1) : null,
-    ));
+    pageButtons.add(IconButton(icon: const Icon(Icons.chevron_right, color: Colors.white), onPressed: _page < _totalPages ? () => _goToPage(_page + 1) : null));
 
     return Container(
       height: 60,
       color: Colors.black26,
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: pageButtons),
+    );
+  }
+
+  Widget _buildPageNumber(int number, bool isActive) {
+    return GestureDetector(
+      onTap: () => _goToPage(number),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        width: 35, height: 35,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isActive ? _activePageColor : Colors.white,
+          borderRadius: BorderRadius.circular(4),
+          border: isActive ? null : Border.all(color: Colors.grey[300]!),
+        ),
+        child: Text("$number", style: TextStyle(color: isActive ? Colors.white : Colors.black87, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Widget _buildPageButton(String text, VoidCallback onTap, {bool enabled = true}) {
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        width: 35, height: 35,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: enabled ? Colors.white : Colors.white24,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(text, style: TextStyle(color: enabled ? Colors.black87 : Colors.white24, fontWeight: FontWeight.bold, fontSize: 18)),
+      ),
     );
   }
 
@@ -286,7 +310,7 @@ class _CardsPageState extends State<CardsPage> {
       body: Column(
         children: [
           _buildSearchBar(),
-          _buildFilters(), 
+          _buildFilters(),
           Expanded(child: _buildGrid()),
           _buildPagination(),
         ],

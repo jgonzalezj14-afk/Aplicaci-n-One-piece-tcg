@@ -1,19 +1,26 @@
+import 'card_model.dart';
+
 class DeckModel {
-  final String id;
-  final String name;
-  final List<String> cards;
+  String id;
+  String name;
+  List<CardModel> cards;
+  DateTime createdAt;
 
   DeckModel({
     required this.id,
     required this.name,
     required this.cards,
+    required this.createdAt,
   });
 
-  factory DeckModel.fromJson(Map<String, dynamic> json) {
+  factory DeckModel.empty() {
     return DeckModel(
-      id: json['_id'] ?? '',
-      name: json['name'] ?? 'Sin nombre',
-      cards: List<String>.from(json['cards'] ?? []),
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: 'Nuevo Mazo',
+      cards: [],
+      createdAt: DateTime.now(),
     );
   }
+
+  int get count => cards.length;
 }

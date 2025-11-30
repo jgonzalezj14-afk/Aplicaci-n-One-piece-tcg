@@ -1,7 +1,7 @@
 class CardModel {
   final String id;
   final String name;
-  final String type; 
+  final String type;
   final String color;
   final String imageUrl;
   final String cardNumber;
@@ -10,9 +10,7 @@ class CardModel {
   final String cost;
   final String cardText;
   final String counter;
-  
   final List<String> subTypes;
-  
   final List<CardModel> versions;
 
   CardModel({
@@ -39,14 +37,34 @@ class CardModel {
       });
     }
 
+    dynamic rawPower = json['card_power'] ?? json['power'];
+    dynamic rawCounter = json['counter_amount'] ?? json['counter'];
+    dynamic rawSubTypes = json['sub_types'] ?? json['type'];
+
+   
+    
+    bool familyIsNumber = rawSubTypes != null && int.tryParse(rawSubTypes.toString()) != null;
+    
+    bool powerIsText = rawPower != null && int.tryParse(rawPower.toString()) == null;
+
+    if (familyIsNumber && powerIsText) {
+      
+      rawCounter = rawSubTypes;
+      
+      rawSubTypes = rawPower;
+      
+      rawPower = "0"; 
+    }
+
     List<String> parsedSubTypes = [];
-    if (json['sub_types'] != null) {
-      if (json['sub_types'] is List) {
-        parsedSubTypes = List<String>.from(json['sub_types']);
-      } else if (json['sub_types'] is String) {
-        parsedSubTypes = [json['sub_types']];
+    if (rawSubTypes != null) {
+      if (rawSubTypes is List) {
+        parsedSubTypes = List<String>.from(rawSubTypes);
+      } else {
+        parsedSubTypes = rawSubTypes.toString().split('/');
       }
     }
+    parsedSubTypes = parsedSubTypes.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
 
     return CardModel(
       id: json['card_set_id'] ?? json['card_image_id'] ?? '',
@@ -56,11 +74,13 @@ class CardModel {
       imageUrl: json['card_image'] ?? '', 
       cardNumber: json['card_set_id']?.toString() ?? '???',
       rarity: json['rarity'] ?? 'N/A',
-      power: json['card_power']?.toString() ?? '-',
+      
+      power: rawPower?.toString() ?? '-',
+      counter: rawCounter?.toString() ?? '-',
+      subTypes: parsedSubTypes,
+
       cost: json['card_cost']?.toString() ?? '-',
       cardText: json['card_text'] ?? 'Sin efecto',
-      counter: json['counter_amount']?.toString() ?? '-',
-      subTypes: parsedSubTypes, 
       versions: versionsList,
     );
   }
