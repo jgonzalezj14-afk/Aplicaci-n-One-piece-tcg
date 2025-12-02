@@ -12,19 +12,12 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _woodColor,
-      appBar: AppBar(
-        title: const Text('MI CAMAROTE', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-        backgroundColor: Colors.black,
-        foregroundColor: _goldColor,
-        centerTitle: true,
-        elevation: 0,
-      ),
       body: Center(
         child: Container(
           margin: const EdgeInsets.all(20),
           padding: const EdgeInsets.all(30),
           decoration: BoxDecoration(
-            color: _parchmentColor, 
+            color: _parchmentColor,
             borderRadius: BorderRadius.circular(15),
             border: Border.all(color: const Color(0xFF5D4037), width: 3),
             boxShadow: [const BoxShadow(color: Colors.black54, blurRadius: 10, offset: Offset(4, 4))],
@@ -32,32 +25,17 @@ class ProfilePage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircleAvatar(
-                radius: 60,
-                backgroundColor: _woodColor,
-                child: Icon(Icons.person, size: 70, color: _goldColor),
-              ),
+              Text('MI CAMAROTE', style: TextStyle(color: _pirateRed, fontWeight: FontWeight.w900, fontSize: 24, letterSpacing: 1.5)),
+              const SizedBox(height: 20),
+              CircleAvatar(radius: 60, backgroundColor: _woodColor, child: Icon(Icons.person, size: 70, color: _goldColor)),
               const SizedBox(height: 30),
-
               _buildProfileInfo("Usuario:", "Capitán Luffy"),
               _buildProfileInfo("Nombre:", "Monkey D. Luffy"),
-              _buildProfileInfo("Contraseña:", "************"), 
-
+              _buildProfileInfo("Contraseña:", "************"),
               const SizedBox(height: 40),
-
               ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _pirateRed,
-                  foregroundColor: _parchmentColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  side: BorderSide(color: _goldColor, width: 2),
-                ),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("¡Sesión cerrada! ¡Hasta la próxima, pirata!"))
-                  );
-                },
+                style: ElevatedButton.styleFrom(backgroundColor: _pirateRed, foregroundColor: _parchmentColor, padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), side: BorderSide(color: _goldColor, width: 2)),
+                onPressed: () {},
                 icon: const Icon(Icons.logout),
                 label: const Text("CERRAR SESIÓN", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
