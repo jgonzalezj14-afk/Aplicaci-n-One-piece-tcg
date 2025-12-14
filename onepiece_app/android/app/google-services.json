@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "65413130200",
+    "project_id": "aplionepiece",
+    "storage_bucket": "aplionepiece.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:65413130200:android:677b7171500ac4a3c474ad",
+        "android_client_info": {
+          "package_name": "com.example.onepiece_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYhErHSQm8TD4C0KYWJNpfIPmK6bKHeMI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
