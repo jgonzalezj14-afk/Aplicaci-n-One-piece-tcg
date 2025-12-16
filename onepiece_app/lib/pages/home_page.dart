@@ -36,6 +36,7 @@ class _HomePageState extends State<HomePage> {
       if (mounted) setState(() { _topLeaders = leaders; _isLoadingLeaders = false; });
     } catch (e) {
       if (mounted) setState(() => _isLoadingLeaders = false);
+      print("Error cargando líderes: $e");
     }
   }
 
@@ -45,7 +46,7 @@ class _HomePageState extends State<HomePage> {
       final card = await _apiService.getRandomCard();
       if (mounted) setState(() => _randomCard = card);
     } catch (e) {
-      print(e);
+      print("Error carta random: $e");
     } finally {
       if (mounted) setState(() => _isLoadingRandom = false);
     }
@@ -65,17 +66,29 @@ class _HomePageState extends State<HomePage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // --- HEADER PIRATA ---
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(25),
-              decoration: BoxDecoration(color: Colors.black38, border: Border(bottom: BorderSide(color: _goldColor, width: 2))),
+              decoration: BoxDecoration(
+                color: Colors.black38, 
+                border: Border(bottom: BorderSide(color: _goldColor, width: 2))
+              ),
               child: Column(
                 children: [
                   const Icon(Icons.anchor, size: 60, color: Colors.white54),
                   const SizedBox(height: 15),
-                  Text("Bienvenido al Grand Line", style: TextStyle(color: _goldColor, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'serif'), textAlign: TextAlign.center),
+                  Text(
+                    "Bienvenido al Grand Line", 
+                    style: TextStyle(color: _goldColor, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'serif'), 
+                    textAlign: TextAlign.center
+                  ),
                   const SizedBox(height: 10),
-                  const Text("Gestiona tus mazos y conquista los mares con la mejor aplicación de One Piece tcg.", textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 15, height: 1.5)),
+                  const Text(
+                    "Gestiona tus mazos y conquista los mares con la mejor aplicación de One Piece TCG.", 
+                    textAlign: TextAlign.center, 
+                    style: TextStyle(color: Colors.white70, fontSize: 15, height: 1.5)
+                  ),
                 ],
               ),
             ),
@@ -88,10 +101,12 @@ class _HomePageState extends State<HomePage> {
               child: _isLoadingLeaders
                   ? Center(child: CircularProgressIndicator(color: _goldColor))
                   : _topLeaders.isEmpty 
-                      ? Center(child: Text("No se encontraron datos...", style: TextStyle(color: Colors.white54)))
+                      ? const Center(child: Text("No se encontraron datos...", style: TextStyle(color: Colors.white54)))
                       : Center(
                           child: ListView.builder(
-                            shrinkWrap: true, scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 20),
+                            shrinkWrap: true, 
+                            scrollDirection: Axis.horizontal, 
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
                             itemCount: _topLeaders.length,
                             itemBuilder: (context, index) => _buildLeaderCard(context, _topLeaders[index]),
                           ),
@@ -106,7 +121,9 @@ class _HomePageState extends State<HomePage> {
               height: 180,
               child: Center(
                 child: ListView(
-                  shrinkWrap: true, scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 20),
+                  shrinkWrap: true, 
+                  scrollDirection: Axis.horizontal, 
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: [
                     _buildCollectionCard("PRB-02", "Premium Booster 2", "assets/images/prb02.jpg"),
                     const SizedBox(width: 15),
@@ -134,7 +151,7 @@ class _HomePageState extends State<HomePage> {
                   ElevatedButton.icon(
                     onPressed: _isLoadingRandom ? null : _generateRandomCard,
                     icon: _isLoadingRandom 
-                        ? Container(width: 20, height: 20, child: const CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
                         : const Icon(Icons.refresh, size: 28),
                     label: Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -158,11 +175,11 @@ class _HomePageState extends State<HomePage> {
                       child: Column(
                         children: [
                           Hero(
-                            tag: "random_${_randomCard!.id}",
+                            tag: "card_${_randomCard!.id}",
                             child: Container(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
-                                boxShadow: [BoxShadow(color: _goldColor.withOpacity(0.6), blurRadius: 30, spreadRadius: 5)], // Más brillo
+                                boxShadow: [BoxShadow(color: _goldColor.withOpacity(0.6), blurRadius: 30, spreadRadius: 5)],
                                 border: Border.all(color: _goldColor, width: 3)
                               ),
                               child: ClipRRect(
@@ -185,7 +202,6 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-
             const SizedBox(height: 50),
           ],
         ),
@@ -210,12 +226,33 @@ class _HomePageState extends State<HomePage> {
       child: Container(
         width: 180,
         margin: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(12), border: Border.all(color: _goldColor.withOpacity(0.6), width: 2), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 8, offset: const Offset(3, 3))]),
+        decoration: BoxDecoration(
+            color: Colors.black, 
+            borderRadius: BorderRadius.circular(12), 
+            border: Border.all(color: _goldColor.withOpacity(0.6), width: 2), 
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 8, offset: const Offset(3, 3))]
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(10)), child: Image.network(card.imageUrl, fit: BoxFit.cover, errorBuilder: (c, e, s) => Container(color: Colors.grey[900], child: const Icon(Icons.person, size: 60, color: Colors.white24))))),
-            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: _pirateRed.withOpacity(0.9), borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10))), child: Column(children: [Text(card.name, textAlign: TextAlign.center, style: TextStyle(color: _goldColor, fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis), Text(card.cardNumber, style: const TextStyle(color: Colors.white70, fontSize: 11))])),
+            Expanded(
+                child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(10)), 
+                    child: Image.network(
+                        card.imageUrl, 
+                        fit: BoxFit.cover, 
+                        errorBuilder: (c, e, s) => Container(color: Colors.grey[900], child: const Icon(Icons.person, size: 60, color: Colors.white24))
+                    )
+                )
+            ),
+            Container(
+                padding: const EdgeInsets.all(12), 
+                decoration: BoxDecoration(color: _pirateRed.withOpacity(0.9), borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10))), 
+                child: Column(children: [
+                    Text(card.name, textAlign: TextAlign.center, style: TextStyle(color: _goldColor, fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis), 
+                    Text(card.cardNumber, style: const TextStyle(color: Colors.white70, fontSize: 11))
+                ])
+            ),
           ],
         ),
       ),
@@ -225,15 +262,29 @@ class _HomePageState extends State<HomePage> {
   Widget _buildCollectionCard(String code, String name, String imagePath) {
     return Container(
       width: 260,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF5D4037), width: 2), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 6)], image: DecorationImage(image: AssetImage(imagePath), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.4), BlendMode.darken)), color: Colors.grey[800]),
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12), 
+          border: Border.all(color: const Color(0xFF5D4037), width: 2), 
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 6)], 
+          image: DecorationImage(
+              image: AssetImage(imagePath), 
+              fit: BoxFit.cover, 
+              colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.4), BlendMode.darken)
+          ), 
+          color: Colors.grey[800]
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(code, style: TextStyle(color: _goldColor, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: 2, shadows: [Shadow(color: Colors.black, blurRadius: 10)])),
+          Text(code, style: TextStyle(color: _goldColor, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: 2, shadows: const [Shadow(color: Colors.black, blurRadius: 10)])),
           const SizedBox(height: 5),
           Text(name, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, shadows: [Shadow(color: Colors.black, blurRadius: 10)])),
           const SizedBox(height: 15),
-          Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: _pirateRed, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white30)), child: const Text("PRÓXIMAMENTE", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)))
+          Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), 
+              decoration: BoxDecoration(color: _pirateRed, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white30)), 
+              child: const Text("PRÓXIMAMENTE", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1))
+          )
         ],
       ),
     );

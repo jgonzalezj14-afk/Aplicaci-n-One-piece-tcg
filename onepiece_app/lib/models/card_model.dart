@@ -29,6 +29,21 @@ class CardModel {
     this.versions = const [],
   });
 
+
+  List<String> get colorsList {
+    return color
+        .toLowerCase()
+        .replaceAll("/", " ")
+        .split(" ")
+        .map((c) => c.trim())
+        .where((c) => c.isNotEmpty)
+        .toList();
+  }
+
+  int get costValue => int.tryParse(cost) ?? 0;
+  int get powerValue => int.tryParse(power) ?? 0;
+  int get counterValue => int.tryParse(counter) ?? 0;
+
   static const List<String> knownFamilies = [
     "Straw Hat Crew", "Heart Pirates", "Kid Pirates", "Animal Kingdom Pirates",
     "Big Mom Pirates", "Whitebeard Pirates", "Red Hair Pirates", "Roger Pirates",
@@ -86,7 +101,6 @@ class CardModel {
         } 
         
         rawCounter = tempNum;
-        
         rawSubTypes = tempText.isNotEmpty ? tempText : null; 
     }
     
@@ -107,9 +121,11 @@ class CardModel {
     }
 
     combinedString = combinedString.replaceAll("/", " ").trim();
+    
+    String combinedLower = combinedString.toLowerCase();
 
     for (String family in knownFamilies) {
-      if (combinedString.contains(family)) {
+      if (combinedLower.contains(family.toLowerCase())) {
         finalSubTypes.add(family);
       }
     }

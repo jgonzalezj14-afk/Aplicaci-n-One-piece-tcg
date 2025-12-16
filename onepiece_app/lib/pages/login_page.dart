@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,177 +12,176 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   
-  final _usernameController = TextEditingController();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-
-  bool _isLogin = true; 
+  bool _obscurePassword = true; 
   bool _isLoading = false;
 
-  final Color _woodColor = const Color(0xFF2D1E18);
+  final Color _woodDark = const Color(0xFF3E2723);
   final Color _goldColor = const Color(0xFFFFC107);
-  final Color _pirateRed = const Color(0xFFD32F2F);
 
-  Future<void> _submit() async {
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    FocusScope.of(context).unfocus();
+
     setState(() => _isLoading = true);
     
     try {
-      if (_isLogin) {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-      } else {
-        UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-
-        if (userCredential.user != null) {
-          await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
-            'username': _usernameController.text.trim(),
-            'firstName': _firstNameController.text.trim(),
-            'lastName': _lastNameController.text.trim(),
-            'email': _emailController.text.trim(),
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-        }
-      }
-
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      
       if (mounted) {
-        setState(() => _isLoading = false);
+        Navigator.pop(context); 
       }
-
-      if (mounted) {
-        Navigator.pop(context);
+    } on FirebaseAuthException catch (e) {
+      String message = "Ocurrió un error inesperado.";
+      
+      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
+        message = "Usuario no encontrado o contraseña incorrecta.";
+      } else if (e.code == 'wrong-password') {
+        message = "Contraseña incorrecta.";
+      } else if (e.code == 'invalid-email') {
+        message = "El formato del email no es válido.";
+      } else if (e.code == 'too-many-requests') {
+        message = "Demasiados intentos. Intenta más tarde.";
       }
       
-    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
       if (mounted) setState(() => _isLoading = false);
-      _showError(e.message ?? "Error desconocido en alta mar");
-    } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
-      _showError("Error: $e");
     }
   }
 
   Future<void> _resetPassword() async {
-    if (_emailController.text.isEmpty) {
-      _showError("Escribe tu correo primero para enviarte el pergamino de recuperación.");
+    FocusScope.of(context).unfocus();
+    String email = _emailController.text.trim();
+    
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Escribe tu email arriba para recuperar la contraseña."), 
+          backgroundColor: Colors.orange
+        ),
+      );
       return;
     }
-    try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: _emailController.text.trim());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text("¡Correo enviado! Revisa tu bandeja de entrada."), backgroundColor: Colors.green),
-      );
-    } on FirebaseAuthException catch (e) {
-      _showError(e.message ?? "No se pudo enviar el correo");
-    }
-  }
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: _pirateRed));
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Correo enviado a $email. Revisa tu spam."), 
+            backgroundColor: Colors.green
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: ${e.message}"), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _woodColor,
+      backgroundColor: _woodDark,
       appBar: AppBar(
-        title: Text(_isLogin ? "INICIAR TRAVESÍA" : "NUEVO PIRATA", style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
         backgroundColor: Colors.black,
         foregroundColor: _goldColor,
-        centerTitle: true,
+        title: const Text("INICIAR SESIÓN", style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(25.0),
+          padding: const EdgeInsets.all(20.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(_isLogin ? Icons.lock_open : Icons.person_add, size: 60, color: _goldColor),
+              Icon(Icons.anchor, size: 80, color: _goldColor),
+              const SizedBox(height: 30),
+
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Correo Electrónico",
+                  labelStyle: TextStyle(color: _goldColor),
+                  enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: _goldColor)),
+                  focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                  prefixIcon: Icon(Icons.email, color: _goldColor),
+                ),
+              ),
               const SizedBox(height: 20),
 
-              if (!_isLogin) ...[
-                _buildTextField(_usernameController, "Nombre de Usuario", Icons.alternate_email),
-                const SizedBox(height: 15),
-                Row(
-                  children: [
-                    Expanded(child: _buildTextField(_firstNameController, "Nombre", Icons.badge)),
-                    const SizedBox(width: 10),
-                    Expanded(child: _buildTextField(_lastNameController, "Apellido", Icons.badge_outlined)),
-                  ],
-                ),
-                const SizedBox(height: 15),
-              ],
-
-              _buildTextField(_emailController, "Correo Electrónico", Icons.email),
-              const SizedBox(height: 15),
-              _buildTextField(_passwordController, "Contraseña", Icons.key, isPassword: true),
-              
-              if (_isLogin)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: _resetPassword,
-                    child: const Text("¿Olvidaste tu contraseña?", style: TextStyle(color: Colors.white54, fontSize: 12)),
+              TextField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Contraseña",
+                  labelStyle: TextStyle(color: _goldColor),
+                  enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: _goldColor)),
+                  focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                  prefixIcon: Icon(Icons.lock, color: _goldColor),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                      color: Colors.white70,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
                   ),
                 ),
+              ),
+              const SizedBox(height: 10),
 
-              const SizedBox(height: 30),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _resetPassword,
+                  child: const Text(
+                    "¿Olvidaste tu contraseña?", 
+                    style: TextStyle(color: Colors.white70, decoration: TextDecoration.underline)
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
 
               SizedBox(
                 width: double.infinity,
                 height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
+                child: _isLoading 
+                ? Center(child: CircularProgressIndicator(color: _goldColor))
+                : ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _goldColor,
                     foregroundColor: Colors.black,
-                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: _isLoading 
-                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.black))
-                    : Text(_isLogin ? "ABRIR COMPUERTAS" : "UNIRSE A LA TRIPULACIÓN"),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              TextButton(
-                onPressed: () {
-                   setState(() {
-                     _isLogin = !_isLogin;
-                   });
-                },
-                child: Text(
-                  _isLogin 
-                    ? "¿Aún no tienes cuenta? Regístrate aquí" 
-                    : "¿Ya tienes cuenta? Inicia sesión",
-                  style: const TextStyle(color: Colors.white70, decoration: TextDecoration.underline),
+                  onPressed: _login,
+                  child: const Text("ENTRAR", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool isPassword = false}) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
-        enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: _goldColor.withOpacity(0.5))),
-        focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: _goldColor, width: 2)),
-        prefixIcon: Icon(icon, color: _goldColor),
-        filled: true,
-        fillColor: Colors.black26,
       ),
     );
   }

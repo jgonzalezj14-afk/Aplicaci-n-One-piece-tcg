@@ -142,7 +142,7 @@ app.get("/onepiece", async (req, res) => {
     
     const paginatedCards = cards.slice(startIndex, endIndex);
 
-    console.log(`✅ Pág ${pageNum}/${totalPages}: Enviando ${paginatedCards.length} cartas.`);
+    console.log(`Pág ${pageNum}/${totalPages}: Enviando ${paginatedCards.length} cartas.`);
     
     res.json({
       data: paginatedCards,
@@ -151,11 +151,11 @@ app.get("/onepiece", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error:", error.message);
+    console.error("Error:", error.message);
     res.status(500).json({ error: "Fallo en el servidor" });
   }
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Servidor LISTO en: http://localhost:${PORT}/onepiece`);
+  console.log(`Servidor LISTO en: http://localhost:${PORT}/onepiece`);
 });
