@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'register_page.dart';
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -178,6 +178,20 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: _login,
                   child: const Text("ENTRAR", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                 ),
+              ),
+
+              const SizedBox(height: 30),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("¿Eres nuevo en estos mares?", style: TextStyle(color: Colors.white70)),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterPage()));
+                    },
+                    child: Text("REGÍSTRATE AQUÍ", style: TextStyle(color: _goldColor, fontWeight: FontWeight.bold)),
+                  ),
+                ],
               ),
             ],
           ),
