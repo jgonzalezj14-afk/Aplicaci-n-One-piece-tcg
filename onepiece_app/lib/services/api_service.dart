@@ -17,17 +17,22 @@ class ApiService {
     String? color,
     String? type,
     String? set,
+    String? cost,
     int page = 1,
     int pageSize = 20,
   }) async {
-    final uri = Uri.parse('$baseUrl/onepiece').replace(queryParameters: {
-      if (query != null && query.isNotEmpty) 'name': query,
-      if (color != null && color != 'All') 'color': color,
-      if (type != null && type != 'All') 'type': type,
-      if (set != null && set != 'All') 'set': set,
+    final queryParams = <String, String>{
       'page': page.toString(),
       'pageSize': pageSize.toString(),
-    });
+    };
+
+    if (query != null && query.isNotEmpty) queryParams['name'] = query;
+    if (color != null && !color.startsWith('All')) queryParams['color'] = color;
+    if (type != null && !type.startsWith('All')) queryParams['type'] = type;
+    if (set != null && !set.startsWith('All')) queryParams['set'] = set;
+    if (cost != null && !cost.startsWith('All')) queryParams['cost'] = cost;
+
+    final uri = Uri.parse('$baseUrl/onepiece').replace(queryParameters: queryParams);
 
     try {
       final response = await http.get(uri);
@@ -46,6 +51,7 @@ class ApiService {
   }
 
   Future<List<CardModel>> getCardsByIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
     final idsString = ids.join(',');
     final uri = Uri.parse('$baseUrl/onepiece').replace(queryParameters: {'ids': idsString, 'pageSize': '100'});
     try {
@@ -71,7 +77,7 @@ class ApiService {
       }
       return null;
     } catch (e) {
-      print("Error random: $e");
+      debugPrint("Error random: $e");
       return null;
     }
   }

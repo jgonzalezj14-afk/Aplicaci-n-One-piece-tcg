@@ -29,7 +29,6 @@ class CardModel {
     this.versions = const [],
   });
 
-
   List<String> get colorsList {
     return color
         .toLowerCase()
@@ -58,21 +57,18 @@ class CardModel {
     "Blackbeard Pirates", "Bluejam Pirates", "Brownbeard Pirates", "Cook Pirates",
     "Flying Pirates", "Golden Lion Pirates", "Roshyamaners", "Wapol Pirates",
     "Cross Guild", "Plague", "Disaster",
-    
-    "Navy", "Supernovas", "The Seven Warlords of the Sea", "Four Emperors", 
-    "Worst Generation", "Revolutionary Army", "Cipher Pol", "CP9", "CP0", 
+    "Navy", "Supernovas", "The Seven Warlords of the Sea", "Four Emperors",
+    "Worst Generation", "Revolutionary Army", "Cipher Pol", "CP9", "CP0",
     "Baroque Works", "Impel Down", "Former Navy", "Neo Navy", "World Government",
     "Celestial Dragons", "Jailer Beasts", "Gorosei", "God Knights",
-    
     "Land of Wano", "Wano Country", "East Blue", "Alabasta", "Skypiea", "Water Seven",
     "Thriller Bark", "Sabaody", "Impel Down", "Marineford", "Fish-Man Island",
     "Punk Hazard", "Dressrosa", "Whole Cake Island", "Egghead", "Amazon Lily",
     "Germa 66", "Vinsmoke Family", "Galley-La Company", "Mountain Bandits",
     "Shandian", "Sky Island", "Moon", "Lunarian", "Minks", "Fish-Man", "Merfolk",
-    "Homies", "Scientist", "Vegapunk", "Seraphim", "Pacifista", "Smile", 
+    "Homies", "Scientist", "Vegapunk", "Seraphim", "Pacifista", "Smile",
     "Gifters", "Pleasures", "Waiters", "Headliners", "Flying Six", "Numbers",
     "Kozuki Clan", "Kurozumi Clan", "Nine Red Scabbards", "Animal", "Giant",
-    
     "FILM", "Uta", "Red Hair", "Music", "Odyssey", "Gran Tesoro", "Golden",
     "Festival", "Daughter", "Standard"
   ];
@@ -90,23 +86,23 @@ class CardModel {
     dynamic rawSubTypes = json['sub_types'] ?? json['type'];
 
     bool isNumeric(dynamic s) => s != null && int.tryParse(s.toString()) != null;
-    
-    if (isNumeric(rawSubTypes)) {
-        String tempNum = rawSubTypes.toString();
-        String tempText = "";
 
-        if (rawPower != null && !isNumeric(rawPower)) {
-            tempText = rawPower.toString();
-            rawPower = "0"; 
-        } 
-        
-        rawCounter = tempNum;
-        rawSubTypes = tempText.isNotEmpty ? tempText : null; 
+    if (isNumeric(rawSubTypes)) {
+      String tempNum = rawSubTypes.toString();
+      String tempText = "";
+
+      if (rawPower != null && !isNumeric(rawPower)) {
+        tempText = rawPower.toString();
+        rawPower = "0";
+      }
+
+      rawCounter = tempNum;
+      rawSubTypes = tempText.isNotEmpty ? tempText : null;
     }
-    
+
     if (rawPower != null && !isNumeric(rawPower) && rawPower.toString().length > 3) {
-        rawSubTypes = rawPower;
-        rawPower = "-";
+      rawSubTypes = rawPower;
+      rawPower = "-";
     }
 
     List<String> finalSubTypes = [];
@@ -121,7 +117,7 @@ class CardModel {
     }
 
     combinedString = combinedString.replaceAll("/", " ").trim();
-    
+
     String combinedLower = combinedString.toLowerCase();
 
     for (String family in knownFamilies) {
@@ -131,31 +127,29 @@ class CardModel {
     }
 
     if (finalSubTypes.isEmpty && combinedString.isNotEmpty) {
-       finalSubTypes = combinedString.split(" ");
+      finalSubTypes = combinedString.split(" ");
     }
 
     finalSubTypes = finalSubTypes
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
-        .toSet() 
+        .toSet()
         .toList();
-    
-    finalSubTypes.sort(); 
+
+    finalSubTypes.sort();
 
     return CardModel(
       id: json['card_set_id'] ?? json['card_image_id'] ?? '',
       name: json['card_name'] ?? 'Sin nombre',
       type: json['card_type'] ?? 'Desconocido',
       color: json['card_color'] ?? 'N/A',
-      imageUrl: json['card_image'] ?? '', 
+      imageUrl: json['card_image'] ?? '',
       cardNumber: json['card_set_id']?.toString() ?? '???',
       rarity: json['rarity'] ?? 'N/A',
-      
       power: rawPower?.toString() ?? '-',
       counter: rawCounter?.toString() ?? '-',
       cost: json['card_cost']?.toString() ?? '-',
       cardText: json['card_text'] ?? 'Sin efecto',
-      
       subTypes: finalSubTypes,
       versions: versionsList,
     );

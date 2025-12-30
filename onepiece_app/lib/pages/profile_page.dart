@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:async'; 
+import '../services/auth_service.dart';
+import '../services/database_service.dart';
 import 'login_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -13,17 +15,24 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final AuthService _authService = AuthService();
+  final DatabaseService _dbService = DatabaseService();
+
   User? _currentUser;
   
+  StreamSubscription? _authSubscription; 
+
   final TextEditingController _usernameController = TextEditingController(); 
   final TextEditingController _fullNameController = TextEditingController(); 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   bool _isEditing = false;
   bool _isLoading = false;
   bool _isUploadingImage = false; 
   bool _obscurePass = true;
+  bool _obscureConfirmPass = true;
 
   final Color _woodDark = const Color(0xFF3E2723);
   final Color _woodLight = const Color(0xFF4E342E);
@@ -33,8 +42,24 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _currentUser = FirebaseAuth.instance.currentUser;
+    _authSubscription = _authService.authStateChanges.listen((user) {
+      if (mounted) {
+        setState(() {
+          _currentUser = user;
+        });
+        if (user != null) {
+          _loadUserData();
+        }
+      }
+    });
+    _currentUser = _authService.currentUser;
     _loadUserData();
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -43,17 +68,17 @@ class _ProfilePageState extends State<ProfilePage> {
     _usernameController.text = _currentUser?.displayName ?? "";
     _emailController.text = _currentUser?.email ?? "";
     _passwordController.text = "";
+    _confirmPasswordController.text = ""; 
 
     try {
-      DocumentSnapshot doc = await FirebaseFirestore.instance.collection('users').doc(_currentUser!.uid).get();
-      if (doc.exists && doc.data() != null) {
-        var data = doc.data() as Map<String, dynamic>;
+      var data = await _dbService.getUserData(_currentUser!.uid);
+      if (data != null && mounted) {
         setState(() {
           _fullNameController.text = data['fullName'] ?? "";
         });
       }
     } catch (e) {
-      debugPrint("Error cargando perfil extendido: $e");
+      debugPrint("Error cargando perfil: $e");
     }
   }
 
@@ -71,32 +96,17 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => _isUploadingImage = true);
 
     try {
-      final storageRef = FirebaseStorage.instance.ref().child('profile_images').child('${_currentUser!.uid}.jpg');
-      
-      final bytes = await image.readAsBytes();
-      final metadata = SettableMetadata(contentType: 'image/jpeg');
-      
-      final uploadTask = storageRef.putData(bytes, metadata);
-
-      await uploadTask;
-
-      String downloadUrl = await storageRef.getDownloadURL();
-      downloadUrl = "$downloadUrl?t=${DateTime.now().millisecondsSinceEpoch}";
-
+      String downloadUrl = await _dbService.uploadProfileImage(_currentUser!.uid, image);
       await _currentUser!.updatePhotoURL(downloadUrl);
-      
-      await FirebaseFirestore.instance.collection('users').doc(_currentUser!.uid).set({
-        'photoUrl': downloadUrl
-      }, SetOptions(merge: true));
-
-      await _currentUser!.reload();
-      setState(() {
-        _currentUser = FirebaseAuth.instance.currentUser;
-      });
+      await _authService.reloadUser();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("¡Foto actualizada con éxito!"), backgroundColor: Colors.green));
+          setState(() {
+            _currentUser = _authService.currentUser;
+          });
       }
+
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("¡Foto actualizada con éxito!"), backgroundColor: Colors.green));
 
     } catch (e) {
       debugPrint("Error subiendo imagen: $e");
@@ -106,65 +116,16 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Widget _buildAvatarWidget() {
-    final String? photoUrl = _currentUser?.photoURL;
-    
-    return GestureDetector(
-      onTap: _isEditing ? _uploadImage : null,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 110,
-            height: 110,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _goldColor,
-              border: Border.all(color: _goldColor, width: 3),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 5, offset: const Offset(0, 2))]
-            ),
-            child: ClipOval(
-              child: photoUrl != null
-                  ? Image.network(
-                      photoUrl,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Center(child: CircularProgressIndicator(color: _woodDark));
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(Icons.broken_image, size: 50, color: _woodDark.withOpacity(0.5));
-                      },
-                    )
-                  : Icon(Icons.person, size: 65, color: _woodDark),
-            ),
-          ),
-
-          if (_isUploadingImage)
-            Container(
-              width: 110,
-              height: 110,
-              decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-              child: const CircularProgressIndicator(color: Colors.white),
-            ),
-
-          if (_isEditing && !_isUploadingImage)
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: _goldColor, shape: BoxShape.circle, border: Border.all(color: _woodDark, width: 2)),
-                child: Icon(Icons.camera_alt, size: 22, color: _woodDark),
-              ),
-            )
-        ],
-      ),
-    );
-  }
-
   Future<void> _updateProfile() async {
     if (_currentUser == null) return;
+    
+    if (_passwordController.text.isNotEmpty) {
+      if (_passwordController.text != _confirmPasswordController.text) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("¡Las contraseñas no coinciden!"), backgroundColor: Colors.orange));
+        return;
+      }
+    }
+
     setState(() => _isLoading = true);
     FocusScope.of(context).unfocus();
 
@@ -172,29 +133,25 @@ class _ProfilePageState extends State<ProfilePage> {
     bool success = true;
 
     try {
-      if (_usernameController.text.trim() != _currentUser!.displayName) {
-        await _currentUser!.updateDisplayName(_usernameController.text.trim());
-        feedback += "Apodo actualizado. ";
+      feedback = await _authService.updateAuthProfile(
+        displayName: _usernameController.text.trim(),
+        newEmail: _emailController.text.trim(),
+        newPassword: _passwordController.text.trim()
+      );
+
+      await _dbService.updateUserData(
+        _currentUser!.uid,
+        fullName: _fullNameController.text.trim(),
+        email: _emailController.text.trim()
+      );
+
+      await _authService.reloadUser();
+      if (mounted) {
+        setState(() {
+           _currentUser = _authService.currentUser;
+           _isEditing = false;
+        });
       }
-
-      await FirebaseFirestore.instance.collection('users').doc(_currentUser!.uid).set({
-        'fullName': _fullNameController.text.trim(),
-        'email': _currentUser!.email,
-      }, SetOptions(merge: true));
-
-      if (_emailController.text.trim().isNotEmpty && _emailController.text.trim() != _currentUser!.email) {
-        await _currentUser!.verifyBeforeUpdateEmail(_emailController.text.trim());
-        feedback += "Revisa tu nuevo correo. ";
-      }
-
-      if (_passwordController.text.isNotEmpty) {
-        await _currentUser!.updatePassword(_passwordController.text.trim());
-        feedback += "Contraseña cambiada. ";
-      }
-
-      await _currentUser!.reload();
-      _currentUser = FirebaseAuth.instance.currentUser;
-      setState(() => _isEditing = false);
       
       if (feedback.isEmpty) feedback = "Datos guardados correctamente.";
 
@@ -211,16 +168,13 @@ class _ProfilePageState extends State<ProfilePage> {
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(feedback), 
-          backgroundColor: success ? Colors.green : _pirateRed
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(feedback), backgroundColor: success ? Colors.green : _pirateRed));
       }
     }
   }
 
   void _logout() async {
-    await FirebaseAuth.instance.signOut();
+    await _authService.signOut();
     if (mounted) setState(() => _currentUser = null);
   }
 
@@ -228,25 +182,40 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     if (_currentUser == null) {
       return Scaffold(
-        backgroundColor: _woodDark,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.flag_circle, size: 80, color: _goldColor.withOpacity(0.5)),
-              const SizedBox(height: 20),
-              const Text("Identifícate, pirata.", style: TextStyle(color: Colors.white, fontSize: 18)),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: _goldColor, foregroundColor: Colors.black),
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginPage())).then((_) { 
-                   setState(() { _currentUser = FirebaseAuth.instance.currentUser; });
-                   _loadUserData(); 
-                }),
-                child: const Text("INICIAR SESIÓN"),
-              )
-            ],
-          ),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                "assets/images/login_bg.jpg",
+                fit: BoxFit.cover,
+              ),
+            ),
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.6),
+              ),
+            ),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.flag_circle, size: 80, color: _goldColor),
+                  const SizedBox(height: 20),
+                  const Text("Identifícate, pirata.", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _goldColor, 
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                    ),
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginPage())),
+                    child: const Text("INICIAR SESIÓN", style: TextStyle(fontWeight: FontWeight.bold)),
+                  )
+                ],
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -302,21 +271,42 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 10),
 
                   if (_isEditing)
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: _obscurePass,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        labelText: "Nueva Contraseña",
-                        labelStyle: TextStyle(color: _goldColor),
-                        prefixIcon: Icon(Icons.lock_outline, color: _goldColor),
-                        enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _goldColor)),
-                        suffixIcon: IconButton(
-                          icon: Icon(_obscurePass ? Icons.visibility : Icons.visibility_off, color: Colors.white54),
-                          onPressed: () => setState(() => _obscurePass = !_obscurePass),
+                    Column(
+                      children: [
+                        TextField(
+                          controller: _passwordController,
+                          obscureText: _obscurePass,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            labelText: "Nueva Contraseña",
+                            labelStyle: TextStyle(color: _goldColor),
+                            prefixIcon: Icon(Icons.lock_outline, color: _goldColor),
+                            enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _goldColor)),
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscurePass ? Icons.visibility : Icons.visibility_off, color: Colors.white54),
+                              onPressed: () => setState(() => _obscurePass = !_obscurePass),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _confirmPasswordController,
+                          obscureText: _obscureConfirmPass,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            labelText: "Confirmar Contraseña",
+                            labelStyle: TextStyle(color: _goldColor),
+                            prefixIcon: Icon(Icons.lock_reset, color: _goldColor),
+                            enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _goldColor)),
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscureConfirmPass ? Icons.visibility : Icons.visibility_off, color: Colors.white54),
+                              onPressed: () => setState(() => _obscureConfirmPass = !_obscureConfirmPass),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
 
                   const SizedBox(height: 20),
@@ -326,21 +316,21 @@ class _ProfilePageState extends State<ProfilePage> {
                       width: double.infinity,
                       height: 50,
                       child: _isLoading 
-                        ? Center(child: CircularProgressIndicator(color: _goldColor))
-                        : ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green[700],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          onPressed: _updateProfile,
-                          child: const Text("GUARDAR CAMBIOS", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ? Center(child: CircularProgressIndicator(color: _goldColor))
+                      : ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green[700],
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
+                        onPressed: _updateProfile,
+                        child: const Text("GUARDAR CAMBIOS", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
                     ),
                 ],
               ),
             ),
-
+            
             Padding(
               padding: const EdgeInsets.fromLTRB(25, 30, 20, 10),
               child: Row(
@@ -353,12 +343,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
 
             StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(_currentUser!.uid)
-                  .collection('decks')
-                  .orderBy('updatedAt', descending: true)
-                  .snapshots(),
+              stream: _dbService.getUserDecksStream(_currentUser!.uid),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator(color: _goldColor));
                 
@@ -370,7 +355,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: const Column(
                       children: [
                         Icon(Icons.map_outlined, size: 50, color: Colors.white24),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         Text("Aún no tienes mapas del tesoro.", style: TextStyle(color: Colors.white38)),
                       ],
                     ),
@@ -427,7 +412,7 @@ class _ProfilePageState extends State<ProfilePage> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(c), child: const Text("Cancelar", style: TextStyle(color: Colors.white54))),
           TextButton(onPressed: () {
-            FirebaseFirestore.instance.collection('users').doc(_currentUser!.uid).collection('decks').doc(docId).delete();
+            _dbService.deleteDeck(_currentUser!.uid, docId);
             Navigator.pop(c);
           }, child: const Text("Borrar", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
         ],
@@ -450,6 +435,63 @@ class _ProfilePageState extends State<ProfilePage> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
         enabledBorder: isEditing ? const OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)) : InputBorder.none,
         focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: _goldColor)),
+      ),
+    );
+  }
+
+  Widget _buildAvatarWidget() {
+    final String? photoUrl = _currentUser?.photoURL;
+    
+    return GestureDetector(
+      onTap: _isEditing ? _uploadImage : null,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 110,
+            height: 110,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _goldColor,
+              border: Border.all(color: _goldColor, width: 3),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 5, offset: const Offset(0, 2))]
+            ),
+            child: ClipOval(
+              child: photoUrl != null && photoUrl.isNotEmpty
+                  ? Image.network(
+                      photoUrl,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(child: CircularProgressIndicator(color: _woodDark));
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(Icons.broken_image, size: 50, color: _woodDark.withOpacity(0.5));
+                      },
+                    )
+                  : Icon(Icons.person, size: 65, color: _woodDark),
+            ),
+          ),
+
+          if (_isUploadingImage)
+            Container(
+              width: 110,
+              height: 110,
+              decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+              child: const CircularProgressIndicator(color: Colors.white),
+            ),
+
+          if (_isEditing && !_isUploadingImage)
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: _goldColor, shape: BoxShape.circle, border: Border.all(color: _woodDark, width: 2)),
+                child: Icon(Icons.camera_alt, size: 22, color: _woodDark),
+              ),
+            )
+        ],
       ),
     );
   }

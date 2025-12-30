@@ -51,10 +51,10 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
+  List<Widget> get _pages => [
     const HomePage(),
     const CardsPage(),
-    const DecksPage(), 
+    DecksPage(onSwitchToProfile: () => _onItemTapped(3)), 
     const ProfilePage(),
   ];
 

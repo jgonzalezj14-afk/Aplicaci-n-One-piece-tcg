@@ -36,7 +36,6 @@ class _HomePageState extends State<HomePage> {
       if (mounted) setState(() { _topLeaders = leaders; _isLoadingLeaders = false; });
     } catch (e) {
       if (mounted) setState(() => _isLoadingLeaders = false);
-      print("Error cargando líderes: $e");
     }
   }
 
@@ -46,7 +45,7 @@ class _HomePageState extends State<HomePage> {
       final card = await _apiService.getRandomCard();
       if (mounted) setState(() => _randomCard = card);
     } catch (e) {
-      print("Error carta random: $e");
+      debugPrint("Error carta random: $e");
     } finally {
       if (mounted) setState(() => _isLoadingRandom = false);
     }
@@ -66,7 +65,6 @@ class _HomePageState extends State<HomePage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // --- HEADER PIRATA ---
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(25),
@@ -237,12 +235,12 @@ class _HomePageState extends State<HomePage> {
           children: [
             Expanded(
                 child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(10)), 
-                    child: Image.network(
-                        card.imageUrl, 
-                        fit: BoxFit.cover, 
-                        errorBuilder: (c, e, s) => Container(color: Colors.grey[900], child: const Icon(Icons.person, size: 60, color: Colors.white24))
-                    )
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(10)), 
+                  child: Image.network(
+                      card.imageUrl, 
+                      fit: BoxFit.cover, 
+                      errorBuilder: (c, e, s) => Container(color: Colors.grey[900], child: const Icon(Icons.person, size: 60, color: Colors.white24))
+                  )
                 )
             ),
             Container(

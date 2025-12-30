@@ -15,14 +15,20 @@ class _CardsPageState extends State<CardsPage> {
   final ScrollController _scrollController = ScrollController();
   
   String _searchQuery = '';
-  String _selectedColor = 'All';
-  String _selectedType = 'All';
-  String _selectedSet = 'All';
+  
+  String _selectedColor = 'All Colors';
+  String _selectedType = 'All Types';
+  String _selectedSet = 'All Sets';
+  String _selectedCost = 'All Costs';
 
   final List<String> _sets = [
-    'All', 'OP-01', 'OP-02', 'OP-03', 'OP-04', 'OP-05', 
-    'OP-06', 'OP-07', 'OP-08', 'OP-09', 'OP-10', 'OP-11', 'OP-12', 'OP-13'
+    'All Sets', 'OP-01', 'OP-02', 'OP-03', 'OP-04', 'OP-05', 
+    'OP-06', 'OP-07', 'OP-08', 'OP-09', 'OP-10', 'OP-11', 'OP-12', 'OP-13','RB-01', 'EB-01', 'EB-02', 'P', 'ST','PRB01','PRB02'
   ];
+
+  final List<String> _types = ['All Types', 'Leader', 'Character', 'Event', 'Stage'];
+  final List<String> _colors = ['All Colors', 'Red', 'Blue', 'Green', 'Purple', 'Black', 'Yellow'];
+  final List<String> _costs = ['All Costs', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 
   List<CardModel> _cards = [];
   bool _isLoading = false;
@@ -32,7 +38,6 @@ class _CardsPageState extends State<CardsPage> {
   final Color _woodColor = const Color(0xFF2D1E18); 
   final Color _goldColor = const Color(0xFFFFC107);
   final Color _parchmentColor = const Color(0xFFFFF8E1); 
-  final Color _pirateRed = const Color(0xFFD32F2F);
   final Color _activePageColor = const Color(0xFF4FC3F7); 
 
   @override
@@ -55,6 +60,7 @@ class _CardsPageState extends State<CardsPage> {
         color: _selectedColor,
         type: _selectedType,
         set: _selectedSet,
+        cost: _selectedCost,
         page: _page,
       );
       if (mounted) {
@@ -67,7 +73,7 @@ class _CardsPageState extends State<CardsPage> {
         }
       }
     } catch (e) {
-      print('Error: $e');
+      debugPrint('Error: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -78,7 +84,6 @@ class _CardsPageState extends State<CardsPage> {
     setState(() => _page = page);
     _fetchCards();
   }
-
 
   Widget _buildSearchBar() {
     return Container(
@@ -111,9 +116,17 @@ class _CardsPageState extends State<CardsPage> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       child: Column(
         children: [
-          Row(children: [Expanded(flex: 3, child: _buildDropdown(_selectedType, ['All', 'Leader', 'Character', 'Event', 'Stage'], 'Tipo', (v) { setState(() => _selectedType = v!); _page=1; _fetchCards(); })), const SizedBox(width: 10), Expanded(flex: 2, child: _buildDropdown(_selectedColor, ['All', 'Red', 'Blue', 'Green', 'Purple', 'Black', 'Yellow'], 'Color', (v) { setState(() => _selectedColor = v!); _page=1; _fetchCards(); }))]),
+          Row(children: [
+            Expanded(flex: 3, child: _buildDropdown(_selectedType, _types, 'Tipo', (v) { setState(() => _selectedType = v!); _page=1; _fetchCards(); })), 
+            const SizedBox(width: 10), 
+            Expanded(flex: 2, child: _buildDropdown(_selectedColor, _colors, 'Color', (v) { setState(() => _selectedColor = v!); _page=1; _fetchCards(); }))
+          ]),
           const SizedBox(height: 10),
-          Row(children: [const Text("Set: ", style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold)), const SizedBox(width: 10), Expanded(child: _buildDropdown(_selectedSet, _sets, 'Colección', (v) { setState(() => _selectedSet = v!); _page=1; _fetchCards(); }))]),
+          Row(children: [
+             Expanded(flex: 3, child: _buildDropdown(_selectedSet, _sets, 'Colección', (v) { setState(() => _selectedSet = v!); _page=1; _fetchCards(); })),
+             const SizedBox(width: 10),
+             Expanded(flex: 2, child: _buildDropdown(_selectedCost, _costs, 'Coste', (v) { setState(() => _selectedCost = v!); _page=1; _fetchCards(); })),
+          ]),
         ],
       ),
     );

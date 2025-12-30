@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth_service.dart'; 
 import 'register_page.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -9,6 +11,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final AuthService _authService = AuthService(); 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   
@@ -27,36 +30,38 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _login() async {
     FocusScope.of(context).unfocus();
-
     setState(() => _isLoading = true);
+
+    if (_emailController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
+       if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(content: Text("Usuario no encontrado o contraseña incorrecta."), backgroundColor: Colors.red)
+         );
+         setState(() => _isLoading = false);
+       }
+       return;
+    }
     
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      await _authService.signIn(
+        _emailController.text,
+        _passwordController.text,
       );
       
-      if (mounted) {
-        Navigator.pop(context); 
-      }
+      if (mounted) Navigator.pop(context); 
+
     } on FirebaseAuthException catch (e) {
       String message = "Ocurrió un error inesperado.";
       
-      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
+      if (e.code == 'user-not-found' || e.code == 'invalid-credential' || e.code == 'wrong-password' || e.code == 'invalid-email') {
         message = "Usuario no encontrado o contraseña incorrecta.";
-      } else if (e.code == 'wrong-password') {
-        message = "Contraseña incorrecta.";
-      } else if (e.code == 'invalid-email') {
-        message = "El formato del email no es válido.";
       } else if (e.code == 'too-many-requests') {
         message = "Demasiados intentos. Intenta más tarde.";
+      } else {
+        message = "Error: ${e.code}"; 
       }
       
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message), backgroundColor: Colors.red),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -67,31 +72,15 @@ class _LoginPageState extends State<LoginPage> {
     String email = _emailController.text.trim();
     
     if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Escribe tu email arriba para recuperar la contraseña."), 
-          backgroundColor: Colors.orange
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Escribe tu email arriba para recuperar la contraseña."), backgroundColor: Colors.orange));
       return;
     }
 
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Correo enviado a $email. Revisa tu spam."), 
-            backgroundColor: Colors.green
-          ),
-        );
-      }
+      await _authService.resetPassword(email);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Correo enviado a $email. Revisa tu spam."), backgroundColor: Colors.green));
     } on FirebaseAuthException catch (e) {
-       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: ${e.message}"), backgroundColor: Colors.red),
-        );
-      }
+       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${e.message}"), backgroundColor: Colors.red));
     }
   }
 
@@ -112,7 +101,6 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               Icon(Icons.anchor, size: 80, color: _goldColor),
               const SizedBox(height: 30),
-
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -126,7 +114,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 20),
-
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -138,57 +125,38 @@ class _LoginPageState extends State<LoginPage> {
                   focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
                   prefixIcon: Icon(Icons.lock, color: _goldColor),
                   suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                      color: Colors.white70,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
+                    icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off, color: Colors.white70),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                   ),
                 ),
               ),
               const SizedBox(height: 10),
-
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: _resetPassword,
-                  child: const Text(
-                    "¿Olvidaste tu contraseña?", 
-                    style: TextStyle(color: Colors.white70, decoration: TextDecoration.underline)
-                  ),
+                  child: const Text("¿Olvidaste tu contraseña?", style: TextStyle(color: Colors.white70, decoration: TextDecoration.underline)),
                 ),
               ),
               const SizedBox(height: 20),
-
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: _isLoading 
                 ? Center(child: CircularProgressIndicator(color: _goldColor))
                 : ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _goldColor,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
+                  style: ElevatedButton.styleFrom(backgroundColor: _goldColor, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
                   onPressed: _login,
                   child: const Text("ENTRAR", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                 ),
               ),
-
               const SizedBox(height: 30),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text("¿Eres nuevo en estos mares?", style: TextStyle(color: Colors.white70)),
                   TextButton(
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterPage()));
-                    },
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterPage())),
                     child: Text("REGÍSTRATE AQUÍ", style: TextStyle(color: _goldColor, fontWeight: FontWeight.bold)),
                   ),
                 ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/auth_service.dart';
+import '../services/database_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -10,10 +11,13 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final AuthService _authService = AuthService();
+  final DatabaseService _dbService = DatabaseService();
+  
   final _formKey = GlobalKey<FormState>();
   
-  final TextEditingController _nicknameController = TextEditingController(); // Apodo
-  final TextEditingController _fullNameController = TextEditingController(); // Nombre Completo
+  final TextEditingController _nicknameController = TextEditingController(); 
+  final TextEditingController _fullNameController = TextEditingController(); 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -30,25 +34,19 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _isLoading = true);
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      User? user = await _authService.signUp(
+        _emailController.text,
+        _passwordController.text
       );
 
-      User? user = userCredential.user;
-
       if (user != null) {
-        await user.updateDisplayName(_nicknameController.text.trim());
-        
-        await user.reload(); 
-        user = FirebaseAuth.instance.currentUser;
+        await _authService.updateAuthProfile(displayName: _nicknameController.text.trim());
 
-        await FirebaseFirestore.instance.collection('users').doc(user!.uid).set({
-          'fullName': _fullNameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'createdAt': FieldValue.serverTimestamp(),
-          'photoUrl': "", 
-        });
+        await _dbService.createUserDoc(
+          user.uid, 
+          _fullNameController.text.trim(), 
+          _emailController.text.trim()
+        );
 
         if (mounted) {
           Navigator.pop(context); 
@@ -62,14 +60,9 @@ class _RegisterPageState extends State<RegisterPage> {
       if (e.code == 'email-already-in-use') msg = "Ese correo ya está registrado.";
       if (e.code == 'weak-password') msg = "La contraseña es muy débil (mínimo 6 caracteres).";
       if (e.code == 'invalid-email') msg = "El correo no es válido.";
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: _pirateRed));
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: _pirateRed));
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: _pirateRed));
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: _pirateRed));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -93,16 +86,12 @@ class _RegisterPageState extends State<RegisterPage> {
               children: [
                 Icon(Icons.person_add_alt_1, size: 80, color: _goldColor),
                 const SizedBox(height: 20),
-                
                 _buildTextField("Apodo (Nick)", _nicknameController, Icons.tag),
                 const SizedBox(height: 15),
-                
                 _buildTextField("Nombre Real", _fullNameController, Icons.badge),
                 const SizedBox(height: 15),
-                
                 _buildTextField("Correo Electrónico", _emailController, Icons.email),
                 const SizedBox(height: 15),
-                
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePass,
@@ -120,9 +109,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 30),
-
                 SizedBox(
                   width: double.infinity,
                   height: 50,
