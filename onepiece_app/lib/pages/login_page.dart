@@ -48,7 +48,7 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text,
       );
       
-      if (mounted) Navigator.pop(context); 
+      if (mounted) Navigator.pushReplacementNamed(context, '/home');
 
     } on FirebaseAuthException catch (e) {
       String message = "Ocurrió un error inesperado.";

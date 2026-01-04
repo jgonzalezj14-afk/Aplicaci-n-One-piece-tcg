@@ -36,12 +36,11 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       User? user = await _authService.signUp(
         _emailController.text,
-        _passwordController.text
+        _passwordController.text,
+        _nicknameController.text.trim()
       );
 
       if (user != null) {
-        await _authService.updateAuthProfile(displayName: _nicknameController.text.trim());
-
         await _dbService.createUserDoc(
           user.uid, 
           _fullNameController.text.trim(), 

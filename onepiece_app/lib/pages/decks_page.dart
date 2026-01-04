@@ -295,8 +295,8 @@ class _DecksPageState extends State<DecksPage> {
         } else {
            for (int i = 0; i < qty; i++) {
              if (_currentDeck.cards.where((c) => c.cardNumber == card.cardNumber).length < 4) {
-                _currentDeck.cards.add(card); 
-                addedCount++;
+               _currentDeck.cards.add(card); 
+               addedCount++;
              }
            }
         }
@@ -498,6 +498,10 @@ class _DecksPageState extends State<DecksPage> {
   }
 
   Widget _buildDeckArea() {
+    double screenWidth = MediaQuery.of(context).size.width;
+    bool isMobile = screenWidth < 600;
+    int crossAxisCount = isMobile ? 4 : 7;
+
     Map<String, List<CardModel>> groupedCards = {};
     for (var card in _currentDeck.cards) {
       if (!groupedCards.containsKey(card.cardNumber)) groupedCards[card.cardNumber] = [];
@@ -568,7 +572,12 @@ class _DecksPageState extends State<DecksPage> {
                     child: RawScrollbar(
                       thumbVisibility: true, controller: _deckScrollController, thumbColor: _goldColor.withOpacity(0.6), thickness: 8, radius: const Radius.circular(10),
                       child: GridView.count(
-                        controller: _deckScrollController, crossAxisCount: 7, childAspectRatio: 0.7, mainAxisSpacing: 8, crossAxisSpacing: 8, padding: const EdgeInsets.all(8),
+                        controller: _deckScrollController, 
+                        crossAxisCount: crossAxisCount, 
+                        childAspectRatio: 0.7, 
+                        mainAxisSpacing: 8, 
+                        crossAxisSpacing: 8, 
+                        padding: const EdgeInsets.all(8),
                         children: groupedCards.values.map((list) => _buildCardStack(list)).toList(),
                       ),
                     ),
@@ -603,6 +612,10 @@ class _DecksPageState extends State<DecksPage> {
   Widget _buildCardImage(String url) => ClipRRect(borderRadius: BorderRadius.circular(3), child: Image.network(url, fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.grey[800])));
 
   Widget _buildSearchArea() {
+    double screenWidth = MediaQuery.of(context).size.width;
+    bool isMobile = screenWidth < 600;
+    int crossAxisCount = isMobile ? 4 : 6; 
+
     return Column(
       children: [
         Container(
@@ -625,7 +638,12 @@ class _DecksPageState extends State<DecksPage> {
                 thumbVisibility: true, controller: _searchScrollController, thumbColor: _goldColor.withOpacity(0.8), thickness: 8, radius: const Radius.circular(10),
                 child: GridView.builder(
                   controller: _searchScrollController, padding: const EdgeInsets.all(10),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, childAspectRatio: 0.7, crossAxisSpacing: 5, mainAxisSpacing: 5),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount, 
+                    childAspectRatio: 0.7, 
+                    crossAxisSpacing: 5, 
+                    mainAxisSpacing: 5
+                  ),
                   itemCount: _searchResults.length,
                   itemBuilder: (context, index) {
                     final card = _searchResults[index];

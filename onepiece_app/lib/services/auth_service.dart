@@ -14,12 +14,18 @@ class AuthService {
     );
   }
 
-  Future<User?> signUp(String email, String password) async {
+  Future<User?> signUp(String email, String password, String displayName) async {
     UserCredential credential = await _auth.createUserWithEmailAndPassword(
       email: email.trim(),
       password: password.trim(),
     );
-    return credential.user;
+    
+    if (credential.user != null) {
+      await credential.user!.updateDisplayName(displayName);
+      await credential.user!.reload();
+    }
+    
+    return _auth.currentUser;
   }
 
   Future<void> signOut() async {
@@ -33,26 +39,22 @@ class AuthService {
   Future<String> updateAuthProfile({String? displayName, String? newEmail, String? newPassword}) async {
     User? user = _auth.currentUser;
     if (user == null) return "No hay usuario";
-    String feedback = "";
 
     try {
       if (displayName != null && displayName != user.displayName) {
         await user.updateDisplayName(displayName);
-        feedback += "Apodo actualizado. ";
       }
       if (newEmail != null && newEmail.isNotEmpty && newEmail != user.email) {
         await user.verifyBeforeUpdateEmail(newEmail);
-        feedback += "Verifica tu nuevo correo. ";
       }
       if (newPassword != null && newPassword.isNotEmpty) {
         await user.updatePassword(newPassword);
-        feedback += "Contraseña cambiada. ";
       }
       await user.reload();
+      return "Cambios guardados correctamente";
     } catch (e) {
       rethrow;
     }
-    return feedback;
   }
   
   Future<void> reloadUser() async {

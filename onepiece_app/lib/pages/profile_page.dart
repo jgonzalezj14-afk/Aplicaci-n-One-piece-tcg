@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -20,8 +21,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   User? _currentUser;
   
-  StreamSubscription? _authSubscription; 
-
   final TextEditingController _usernameController = TextEditingController(); 
   final TextEditingController _fullNameController = TextEditingController(); 
   final TextEditingController _emailController = TextEditingController();
@@ -30,9 +29,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
   bool _isEditing = false;
   bool _isLoading = false;
-  bool _isUploadingImage = false; 
   bool _obscurePass = true;
   bool _obscureConfirmPass = true;
+
+  File? _pendingImageFile;
 
   final Color _woodDark = const Color(0xFF3E2723);
   final Color _woodLight = const Color(0xFF4E342E);
@@ -42,24 +42,8 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _authSubscription = _authService.authStateChanges.listen((user) {
-      if (mounted) {
-        setState(() {
-          _currentUser = user;
-        });
-        if (user != null) {
-          _loadUserData();
-        }
-      }
-    });
     _currentUser = _authService.currentUser;
     _loadUserData();
-  }
-
-  @override
-  void dispose() {
-    _authSubscription?.cancel();
-    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -69,6 +53,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _emailController.text = _currentUser?.email ?? "";
     _passwordController.text = "";
     _confirmPasswordController.text = ""; 
+    _pendingImageFile = null;
 
     try {
       var data = await _dbService.getUserData(_currentUser!.uid);
@@ -82,7 +67,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _uploadImage() async {
+  Future<void> _pickImage() async {
     final picker = ImagePicker();
     final XFile? image = await picker.pickImage(
       source: ImageSource.gallery, 
@@ -93,27 +78,9 @@ class _ProfilePageState extends State<ProfilePage> {
     
     if (image == null) return;
 
-    setState(() => _isUploadingImage = true);
-
-    try {
-      String downloadUrl = await _dbService.uploadProfileImage(_currentUser!.uid, image);
-      await _currentUser!.updatePhotoURL(downloadUrl);
-      await _authService.reloadUser();
-
-      if (mounted) {
-          setState(() {
-            _currentUser = _authService.currentUser;
-          });
-      }
-
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("¡Foto actualizada con éxito!"), backgroundColor: Colors.green));
-
-    } catch (e) {
-      debugPrint("Error subiendo imagen: $e");
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al subir: $e"), backgroundColor: _pirateRed));
-    } finally {
-      if (mounted) setState(() => _isUploadingImage = false);
-    }
+    setState(() {
+      _pendingImageFile = File(image.path);
+    });
   }
 
   Future<void> _updateProfile() async {
@@ -129,11 +96,13 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => _isLoading = true);
     FocusScope.of(context).unfocus();
 
-    String feedback = "";
-    bool success = true;
-
     try {
-      feedback = await _authService.updateAuthProfile(
+      if (_pendingImageFile != null) {
+        String downloadUrl = await _dbService.uploadProfileImage(_currentUser!.uid, XFile(_pendingImageFile!.path));
+        await _currentUser!.updatePhotoURL(downloadUrl);
+      }
+
+      await _authService.updateAuthProfile(
         displayName: _usernameController.text.trim(),
         newEmail: _emailController.text.trim(),
         newPassword: _passwordController.text.trim()
@@ -146,29 +115,30 @@ class _ProfilePageState extends State<ProfilePage> {
       );
 
       await _authService.reloadUser();
+      
       if (mounted) {
         setState(() {
            _currentUser = _authService.currentUser;
            _isEditing = false;
+           _pendingImageFile = null;
+           _isLoading = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Cambios guardados correctamente"), backgroundColor: Colors.green));
       }
-      
-      if (feedback.isEmpty) feedback = "Datos guardados correctamente.";
 
     } on FirebaseAuthException catch (e) {
-      success = false;
+      String feedback = "Error: ${e.message}";
       if (e.code == 'requires-recent-login') {
         feedback = "Por seguridad, cierra sesión y vuelve a entrar para cambiar datos sensibles.";
-      } else {
-        feedback = "Error: ${e.message}";
       }
-    } catch (e) {
-      success = false;
-      feedback = "Error: $e";
-    } finally {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(feedback), backgroundColor: success ? Colors.green : _pirateRed));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(feedback), backgroundColor: _pirateRed));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: _pirateRed));
       }
     }
   }
@@ -188,6 +158,7 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Image.asset(
                 "assets/images/login_bg.jpg",
                 fit: BoxFit.cover,
+                errorBuilder: (c, e, s) => Container(color: Colors.black),
               ),
             ),
             Positioned.fill(
@@ -408,7 +379,7 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (c) => AlertDialog(
         backgroundColor: _woodDark,
         title: const Text("¿Quemar este mapa?", style: TextStyle(color: Colors.white)),
-        content: const Text("El mazo se perderá para siempre en el fondo del mar.", style: TextStyle(color: Colors.white70)),
+        content: const Text("El mazo se perderá para siempre.", style: TextStyle(color: Colors.white70)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(c), child: const Text("Cancelar", style: TextStyle(color: Colors.white54))),
           TextButton(onPressed: () {
@@ -442,8 +413,15 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildAvatarWidget() {
     final String? photoUrl = _currentUser?.photoURL;
     
+    ImageProvider? imageProvider;
+    if (_pendingImageFile != null) {
+      imageProvider = FileImage(_pendingImageFile!);
+    } else if (photoUrl != null && photoUrl.isNotEmpty) {
+      imageProvider = NetworkImage(photoUrl);
+    }
+
     return GestureDetector(
-      onTap: _isEditing ? _uploadImage : null,
+      onTap: _isEditing ? _pickImage : null,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -457,31 +435,23 @@ class _ProfilePageState extends State<ProfilePage> {
               boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 5, offset: const Offset(0, 2))]
             ),
             child: ClipOval(
-              child: photoUrl != null && photoUrl.isNotEmpty
-                  ? Image.network(
-                      photoUrl,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Center(child: CircularProgressIndicator(color: _woodDark));
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(Icons.broken_image, size: 50, color: _woodDark.withOpacity(0.5));
-                      },
-                    )
-                  : Icon(Icons.person, size: 65, color: _woodDark),
+              child: imageProvider != null
+                ? Image(
+                    image: imageProvider,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(child: CircularProgressIndicator(color: _woodDark));
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(Icons.broken_image, size: 50, color: _woodDark.withOpacity(0.5));
+                    },
+                  )
+                : Icon(Icons.person, size: 65, color: _woodDark),
             ),
           ),
 
-          if (_isUploadingImage)
-            Container(
-              width: 110,
-              height: 110,
-              decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-              child: const CircularProgressIndicator(color: Colors.white),
-            ),
-
-          if (_isEditing && !_isUploadingImage)
+          if (_isEditing)
             Positioned(
               bottom: 0,
               right: 0,
