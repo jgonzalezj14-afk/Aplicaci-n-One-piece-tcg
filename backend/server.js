@@ -5,7 +5,7 @@ require("dotenv").config();
 
 const app = express();
 const API_BASE_URL = "https://www.optcgapi.com";
-const PORT = 6090;
+const PORT = process.env.PORT || 6090;
 
 app.use(cors({
     origin: "*", 
@@ -15,7 +15,6 @@ app.use(cors({
 }));
 
 app.use(express.json());
-
 
 const getDynamicBaseUrl = (req) => {
     return `${req.protocol}://${req.get('host')}`;
