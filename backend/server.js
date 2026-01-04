@@ -36,7 +36,9 @@ app.get("/random_card", async (req, res) => {
         randomCard.card_image = API_BASE_URL + randomCard.card_image;
     }
     
-    if (randomCard.card_image) {
+    const isWeb = req.headers['origin'] || req.headers['referer'];
+
+    if (isWeb && randomCard.card_image) {
         randomCard.card_image = convertToSafeUrl(randomCard.card_image);
     }
 
@@ -63,6 +65,8 @@ app.get("/onepiece", async (req, res) => {
     if (setsRes.status === 'fulfilled') rawCards = rawCards.concat(setsRes.value.data);
     if (startersRes.status === 'fulfilled') rawCards = rawCards.concat(startersRes.value.data);
 
+    const isWeb = req.headers['origin'] || req.headers['referer'];
+
     rawCards = rawCards.map(card => {
       let originalUrl = card.card_image;
       if (originalUrl && !originalUrl.startsWith("http")) {
@@ -70,7 +74,11 @@ app.get("/onepiece", async (req, res) => {
       }
       
       if (originalUrl) {
-          card.card_image = convertToSafeUrl(originalUrl);
+          if (isWeb) {
+             card.card_image = convertToSafeUrl(originalUrl);
+          } else {
+             card.card_image = originalUrl;
+          }
       }
       return card;
     });
