@@ -7,12 +7,7 @@ const app = express();
 const API_BASE_URL = "https://www.optcgapi.com";
 const PORT = process.env.PORT || 6090;
 
-app.use(cors({
-    origin: "*", 
-    methods: ["GET", "POST", "OPTIONS"], 
-    allowedHeaders: ["Content-Type", "Authorization", "Access-Control-Allow-Origin"],
-    credentials: true
-}));
+app.use(cors()); 
 
 app.use(express.json());
 

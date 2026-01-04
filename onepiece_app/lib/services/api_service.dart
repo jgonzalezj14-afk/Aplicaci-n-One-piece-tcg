@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart'; 
 import 'package:http/http.dart' as http;  
 import '../models/card_model.dart';
@@ -33,24 +32,30 @@ class ApiService {
 
     try {
       final response = await http.get(uri);
+      
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         final List<dynamic> dataList = jsonResponse['data'] ?? [];
         final int totalPages = jsonResponse['totalPages'] ?? 1;
+        
         final List<CardModel> cards = dataList.map((e) => CardModel.fromJson(e)).toList();
         return {'cards': cards, 'totalPages': totalPages};
       } else {
+        debugPrint('Error API: ${response.statusCode} - ${response.body}');
         throw Exception('Error API: ${response.statusCode}');
       }
     } catch (e) {
+      debugPrint('Error conexión: $e');
       throw Exception('Error conexión: $e');
     }
   }
 
   Future<List<CardModel>> getCardsByIds(List<String> ids) async {
     if (ids.isEmpty) return [];
+    
     final idsString = ids.join(',');
     final uri = Uri.parse('$baseUrl/onepiece').replace(queryParameters: {'ids': idsString, 'pageSize': '100'});
+    
     try {
       final response = await http.get(uri);
       if (response.statusCode == 200) {
@@ -60,6 +65,7 @@ class ApiService {
       }
       return [];
     } catch (e) {
+      debugPrint("Error getCardsByIds: $e");
       return [];
     }
   }

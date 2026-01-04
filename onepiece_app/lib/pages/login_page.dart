@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart'; 
+import '../main.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -48,7 +49,13 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text,
       );
       
-      if (mounted) Navigator.pushReplacementNamed(context, '/home');
+      if (mounted) {
+          Navigator.pushAndRemoveUntil(
+          context, 
+          MaterialPageRoute(builder: (_) => const MainPage()),
+          (route) => false
+        );
+      }
 
     } on FirebaseAuthException catch (e) {
       String message = "Ocurrió un error inesperado.";
