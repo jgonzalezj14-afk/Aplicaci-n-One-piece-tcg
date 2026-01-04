@@ -6,10 +6,7 @@ import '../models/card_model.dart';
 
 class ApiService {
   static String get baseUrl {
-    const String port = "6090";
-    if (kIsWeb) return "http://localhost:$port";
-    if (Platform.isAndroid) return "http://10.0.2.2:$port";
-    return "http://localhost:$port";
+    return "https://onepiece-builder.onrender.com";
   }
 
   Future<Map<String, dynamic>> getCardsPaginated({
