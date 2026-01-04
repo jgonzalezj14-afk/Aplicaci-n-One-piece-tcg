@@ -44,33 +44,61 @@ class CardModel {
   int get counterValue => int.tryParse(counter) ?? 0;
 
   static const List<String> knownFamilies = [
+    "?", 
+    "Mary Geoise",
+    "Drum Kingdom",
+    "Supernovas", "Worst Generation", "Four Emperors", "The Seven Warlords of the Sea",
+    "Revolutionary Army", "Cross Guild", "Germa 66", "Vinsmoke Family",
+    "Baroque Works", "Thriller Bark Pirates", "Donquixote Pirates", "Kuja Pirates",
+    "Sun Pirates", "God Knights", "The Five Elders", "Gorosei",
+    "Celestial Dragons", "World Government", "Navy", "Former Navy", "Neo Navy",
+    "Cipher Pol", "CP0", "CP9", "Impel Down", "Jailer Beasts",
+
     "Straw Hat Crew", "Heart Pirates", "Kid Pirates", "Animal Kingdom Pirates",
     "Big Mom Pirates", "Whitebeard Pirates", "Red Hair Pirates", "Roger Pirates",
-    "Kuja Pirates", "Donquixote Pirates", "Thriller Bark Pirates", "Drake Pirates",
-    "Beautiful Pirates", "Fire Tank Pirates", "On Air Pirates", "Hawkins Pirates",
-    "Fallen Monk Pirates", "Bonney Pirates", "Spade Pirates", "Sun Pirates",
-    "Arlong Pirates", "Krieg Pirates", "Black Cat Pirates", "Buggy Pirates",
-    "Giant Warrior Pirates", "Foxy Pirates", "New Fish-Man Pirates", "Caribou Pirates",
-    "Bartoclub", "Happosui Army", "Ideoman Gym", "Tontatta Corps", "Yonta Maria Grand Fleet",
-    "New Giant Warrior Pirates", "Nox Pirates", "Rolling Pirates", "Rumbar Pirates",
-    "Saruyama Alliance", "Fake Straw Hat Crew", "Barrels Pirates", "Bellamy Pirates",
-    "Blackbeard Pirates", "Bluejam Pirates", "Brownbeard Pirates", "Cook Pirates",
-    "Flying Pirates", "Golden Lion Pirates", "Roshyamaners", "Wapol Pirates",
-    "Cross Guild", "Plague", "Disaster",
-    "Navy", "Supernovas", "The Seven Warlords of the Sea", "Four Emperors",
-    "Worst Generation", "Revolutionary Army", "Cipher Pol", "CP9", "CP0",
-    "Baroque Works", "Impel Down", "Former Navy", "Neo Navy", "World Government",
-    "Celestial Dragons", "Jailer Beasts", "Gorosei", "God Knights",
-    "Land of Wano", "Wano Country", "East Blue", "Alabasta", "Skypiea", "Water Seven",
-    "Thriller Bark", "Sabaody", "Impel Down", "Marineford", "Fish-Man Island",
-    "Punk Hazard", "Dressrosa", "Whole Cake Island", "Egghead", "Amazon Lily",
-    "Germa 66", "Vinsmoke Family", "Galley-La Company", "Mountain Bandits",
-    "Shandian", "Sky Island", "Moon", "Lunarian", "Minks", "Fish-Man", "Merfolk",
-    "Homies", "Scientist", "Vegapunk", "Seraphim", "Pacifista", "Smile",
-    "Gifters", "Pleasures", "Waiters", "Headliners", "Flying Six", "Numbers",
-    "Kozuki Clan", "Kurozumi Clan", "Nine Red Scabbards", "Animal", "Giant",
-    "FILM", "Uta", "Red Hair", "Music", "Odyssey", "Gran Tesoro", "Golden",
-    "Festival", "Daughter", "Standard"
+    "Blackbeard Pirates", "Air Pirates", "Alvida Pirates", "Arlong Pirates",
+    "Barrels Pirates", "Bartoclub", "Beautiful Pirates", "Bellamy Pirates",
+    "Black Cat Pirates", "Bluejam Pirates", "Bonney Pirates", "Brownbeard Pirates",
+    "Buggy Pirates", "Caribou Pirates", "Cook Pirates", "Drake Pirates",
+    "Fallen Monk Pirates", "Fake Straw Hat Crew", "Fire Tank Pirates", "Flying Pirates",
+    "Foxy Pirates", "Gasparde Pirates", "Giant Warrior Pirates", "Golden Lion Pirates",
+    "Hawkins Pirates", "Krieg Pirates", "Macro Pirates", "New Giant Warrior Pirates",
+    "New Fish-Man Pirates", "Nox Pirates", "On Air Pirates", "Rolling Pirates",
+    "Rosy Life Riders", "Rumbar Pirates", "Saruyama Alliance", "Schneider Pirates",
+    "Spade Pirates", "Trump Siblings", "Wapol Pirates", "Yes Pirates",
+    "Yonta Maria Grand Fleet",
+
+    "East Blue", "Alabasta", "Skypiea", "Water Seven", "Thriller Bark",
+    "Sabaody Archipelago", "Sabaody", "Marineford", "Fish-Man Island",
+    "Punk Hazard", "Dressrosa", "Whole Cake Island", "Land of Wano", "Wano Country",
+    "Egghead", "Kingdom of Prodence", "Amazon Lily", "Kamabakka Queendom",
+    "Lulusia Kingdom", "Goa Kingdom", "Shimotsuki Village", "Mokomo Dukedom",
+    "Kingdom of Germa", "Tequila Wolf", "Weatheria", "Boin Archipelago",
+    "Momoiro Island", "Torino Kingdom", "Kuraigana Island", "Karakuri Island",
+    "Baldimore", "Namakura Island", "Rusukaina", "Swallow Island",
+    "Konomi Islands", "Shells Town", "Orange Town", "Syrup Village", "Baratie",
+    "Cocoyasi Village", "Loguetown", "Twin Cape", "Whiskey Peak", "Little Garden",
+    "Drum Island", "Jaya", "Long Ring Long Land", "Ohara",
+
+    "Kozuki Clan", "Kouzuki Clan",
+    "Kurozumi Clan", "Nine Red Scabbards", "Ninja",
+    "Smile", "Gifters", "Pleasures", "Waiters", "Headliners", "Flying Six", "Numbers",
+
+    "Scientist", "Vegapunk", "Satellite", "Seraphim", "Pacifista",
+    "MADS", "Neo-MADS", "Centaur",
+
+    "Galley-La Company", "Franky Family", "Bounty Hunters", "Mountain Bandits",
+    "Happosui Army", "Ideoman Gym", "Tontatta Corps", "House of Lambs",
+    "Mugiwara Store", "News Coo",
+
+    "Fish-Man", "Merfolk", "Minks", "Giant", "Lunarian", "Shandian",
+    "Sky Island", "Moon", "Homies", "Animal", "Human",
+
+    "FILM", "Uta", "Music", "Odyssey", "Gran Tesoro", "Golden",
+    "Festival", "Daughter", "Video Game", "Live Action",
+    "25th Anniversary", "Anniversary",
+
+    "Plague", "Disaster", "Special"
   ];
 
   factory CardModel.fromJson(Map<String, dynamic> json) {

@@ -390,7 +390,8 @@ class _DecksPageState extends State<DecksPage> {
 
   void _showLoadDecksDialog() {
     if (_currentUser == null) {
-      _showLoginRequiredDialog("cargar mazos");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Inicia sesión para cargar mazos."), backgroundColor: Colors.orange));
+      if (widget.onSwitchToProfile != null) widget.onSwitchToProfile!();
       return;
     }
     showModalBottomSheet(
@@ -500,7 +501,7 @@ class _DecksPageState extends State<DecksPage> {
   Widget _buildDeckArea() {
     double screenWidth = MediaQuery.of(context).size.width;
     bool isMobile = screenWidth < 600;
-    int crossAxisCount = isMobile ? 4 : 7;
+    int crossAxisCount = isMobile ? 2 : 7; 
 
     Map<String, List<CardModel>> groupedCards = {};
     for (var card in _currentDeck.cards) {
