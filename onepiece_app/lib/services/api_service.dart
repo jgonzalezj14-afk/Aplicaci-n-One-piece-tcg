@@ -59,9 +59,9 @@ class ApiService {
     try {
       final response = await http.get(uri);
       if (response.statusCode == 200) {
-         final jsonResponse = jsonDecode(response.body);
-         final List<dynamic> dataList = jsonResponse['data'] ?? [];
-         return dataList.map((e) => CardModel.fromJson(e)).toList();
+          final jsonResponse = jsonDecode(response.body);
+          final List<dynamic> dataList = jsonResponse['data'] ?? [];
+          return dataList.map((e) => CardModel.fromJson(e)).toList();
       }
       return [];
     } catch (e) {

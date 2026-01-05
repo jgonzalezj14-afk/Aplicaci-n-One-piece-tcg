@@ -7,14 +7,41 @@ const app = express();
 const API_BASE_URL = "https://www.optcgapi.com";
 const PORT = process.env.PORT || 6090;
 
-app.use(cors());
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
-const convertToSafeUrl = (originalUrl) => {
-    if (!originalUrl) return null;
-    const cleanUrl = originalUrl.replace(/^https?:\/\//, '');
-    return `https://wsrv.nl/?url=${cleanUrl}&output=webp`;
-};
+app.get("/proxy_image", async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).send("Falta URL");
+
+  try {
+    const response = await axios({
+      url: url,
+      method: 'GET',
+      responseType: 'arraybuffer',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': API_BASE_URL
+      }
+    });
+
+    const contentType = response.headers['content-type'];
+    if (contentType) res.setHeader('Content-Type', contentType);
+    
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); 
+
+    res.send(response.data);
+
+  } catch (error) {
+    res.status(404).send("Imagen no encontrada");
+  }
+});
 
 app.get("/random_card", async (req, res) => {
   try {
@@ -36,10 +63,14 @@ app.get("/random_card", async (req, res) => {
         randomCard.card_image = API_BASE_URL + randomCard.card_image;
     }
     
-    const isWeb = req.headers['origin'] || req.headers['referer'];
+    const userAgent = req.headers['user-agent'] || '';
+    const isNativeApp = userAgent.includes('Dart');
 
-    if (isWeb && randomCard.card_image) {
-        randomCard.card_image = convertToSafeUrl(randomCard.card_image);
+    if (!isNativeApp && randomCard.card_image) {
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const host = req.get('host');
+        const baseUrl = `${protocol}://${host}`;
+        randomCard.card_image = `${baseUrl}/proxy_image?url=${encodeURIComponent(randomCard.card_image)}`;
     }
 
     if (!randomCard.versions) randomCard.versions = [];
@@ -65,7 +96,12 @@ app.get("/onepiece", async (req, res) => {
     if (setsRes.status === 'fulfilled') rawCards = rawCards.concat(setsRes.value.data);
     if (startersRes.status === 'fulfilled') rawCards = rawCards.concat(startersRes.value.data);
 
-    const isWeb = req.headers['origin'] || req.headers['referer'];
+    const userAgent = req.headers['user-agent'] || '';
+    const isNativeApp = userAgent.includes('Dart');
+    
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.get('host');
+    const baseUrl = `${protocol}://${host}`;
 
     rawCards = rawCards.map(card => {
       let originalUrl = card.card_image;
@@ -74,8 +110,8 @@ app.get("/onepiece", async (req, res) => {
       }
       
       if (originalUrl) {
-          if (isWeb) {
-             card.card_image = convertToSafeUrl(originalUrl);
+          if (!isNativeApp) {
+             card.card_image = `${baseUrl}/proxy_image?url=${encodeURIComponent(originalUrl)}`;
           } else {
              card.card_image = originalUrl;
           }
@@ -106,8 +142,8 @@ app.get("/onepiece", async (req, res) => {
     });
 
     if (ids) {
-      const idList = ids.split(',').map(id => id.trim());
-      cards = cards.filter(c => idList.includes(c.card_set_id));
+      const idList = ids.split(',').map(id => id.trim().toUpperCase());
+      cards = cards.filter(c => c.card_set_id && idList.includes(c.card_set_id.toUpperCase()));
     }
     if (name) cards = cards.filter(c => c.card_name?.toLowerCase().includes(name.trim().toLowerCase()));
     if (cost && cost !== 'All') cards = cards.filter(c => c.card_cost?.toString() === cost.toString());

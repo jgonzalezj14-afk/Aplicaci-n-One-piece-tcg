@@ -104,14 +104,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
       await _authService.updateAuthProfile(
         displayName: _usernameController.text.trim(),
-        newEmail: _emailController.text.trim(),
         newPassword: _passwordController.text.trim()
       );
 
       await _dbService.updateUserData(
         _currentUser!.uid,
         fullName: _fullNameController.text.trim(),
-        email: _emailController.text.trim()
       );
 
       await _authService.reloadUser();
@@ -238,7 +236,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 10),
                   _buildField("Nombre Real", _fullNameController, Icons.badge, _isEditing),
                   const SizedBox(height: 10),
-                  _buildField("Correo", _emailController, Icons.email, _isEditing),
+                  _buildField("Correo", _emailController, Icons.email, false),
                   const SizedBox(height: 10),
 
                   if (_isEditing)
