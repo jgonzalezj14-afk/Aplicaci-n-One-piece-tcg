@@ -450,27 +450,6 @@ class _DecksPageState extends State<DecksPage> {
     );
   }
 
-  void _showLoginRequiredDialog(String action) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: _woodDark,
-        title: Text("Identificación", style: TextStyle(color: _goldColor)),
-        content: Text("Necesitas registrarte para $action.", style: const TextStyle(color: Colors.white)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar", style: TextStyle(color: Colors.white54))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _goldColor, foregroundColor: Colors.black),
-            onPressed: () {
-              Navigator.pop(ctx);
-              if (widget.onSwitchToProfile != null) widget.onSwitchToProfile!();
-            },
-            child: const Text("Ir al Camarote"),
-          )
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
