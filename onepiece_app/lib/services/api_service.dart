@@ -5,12 +5,11 @@ import '../models/card_model.dart';
 
 class ApiService {
   static String get baseUrl {
-    if (kDebugMode) {
-      if (kIsWeb) return "http://localhost:6090";
-      return "http://10.0.2.2:6090";
+    if (kIsWeb) {
+      return kDebugMode ? "http://localhost:6090" : "";
+    } else {
+      return "https://onepiece-builder.onrender.com";
     }
-    
-    return ""; 
   }
 
   static String fixUrl(String url) {
@@ -19,7 +18,6 @@ class ApiService {
       return "$prefix/proxy_image?url=${Uri.encodeComponent(url)}";
     }
     return url;
-    
   }
 
   Future<Map<String, dynamic>> getCardsPaginated({
@@ -42,10 +40,14 @@ class ApiService {
     if (set != null && !set.startsWith('All')) queryParams['set'] = set;
     if (cost != null && !cost.startsWith('All')) queryParams['cost'] = cost;
 
-    String finalUrl = '$baseUrl/onepiece';
-    if (baseUrl.isEmpty) finalUrl = '/onepiece'; 
+    String urlBase = baseUrl;
+    if (urlBase.isEmpty) { 
+       urlBase = "/onepiece"; 
+    } else {
+       urlBase = "$urlBase/onepiece";
+    }
 
-    final uri = Uri.parse(finalUrl).replace(queryParameters: queryParams);
+    final uri = Uri.parse(urlBase).replace(queryParameters: queryParams);
 
     try {
       final response = await http.get(uri);
@@ -71,10 +73,15 @@ class ApiService {
     if (ids.isEmpty) return [];
     
     final idsString = ids.join(',');
-    String finalUrl = '$baseUrl/onepiece';
-    if (baseUrl.isEmpty) finalUrl = '/onepiece';
+    
+    String urlBase = baseUrl;
+    if (urlBase.isEmpty) { 
+       urlBase = "/onepiece"; 
+    } else {
+       urlBase = "$urlBase/onepiece";
+    }
 
-    final uri = Uri.parse(finalUrl).replace(queryParameters: {'ids': idsString, 'pageSize': '100'});
+    final uri = Uri.parse(urlBase).replace(queryParameters: {'ids': idsString, 'pageSize': '100'});
     
     try {
       final response = await http.get(uri);
@@ -91,10 +98,14 @@ class ApiService {
   }
 
   Future<CardModel?> getRandomCard() async {
-    String finalUrl = '$baseUrl/random_card';
-    if (baseUrl.isEmpty) finalUrl = '/random_card';
+    String urlBase = baseUrl;
+    if (urlBase.isEmpty) { 
+       urlBase = "/random_card"; 
+    } else {
+       urlBase = "$urlBase/random_card";
+    }
 
-    final uri = Uri.parse(finalUrl);
+    final uri = Uri.parse(urlBase);
     try {
       final response = await http.get(uri);
       if (response.statusCode == 200) {
