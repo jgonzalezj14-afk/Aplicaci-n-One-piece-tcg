@@ -561,7 +561,9 @@ class _DecksPageState extends State<DecksPage> {
                       child: Container(
                         width: 120, height: 170, margin: const EdgeInsets.only(right: 10),
                         decoration: BoxDecoration(border: Border.all(color: _goldColor, width: 4), borderRadius: BorderRadius.circular(10), color: Colors.black26, boxShadow: [BoxShadow(color: _goldColor.withOpacity(0.3), blurRadius: 20)]),
-                        child: _currentDeck.leader == null ? Center(child: Icon(Icons.person_add, color: _goldColor.withOpacity(0.5), size: 50)) : ClipRRect(borderRadius: BorderRadius.circular(7), child: Image.network(_currentDeck.leader!.imageUrl, fit: BoxFit.cover)),
+                        child: _currentDeck.leader == null 
+                            ? Center(child: Icon(Icons.person_add, color: _goldColor.withOpacity(0.5), size: 50)) 
+                            : ClipRRect(borderRadius: BorderRadius.circular(7), child: Image.network(ApiService.fixUrl(_currentDeck.leader!.imageUrl), fit: BoxFit.cover)),
                       ),
                     ),
                   ],
@@ -610,7 +612,7 @@ class _DecksPageState extends State<DecksPage> {
     );
   }
 
-  Widget _buildCardImage(String url) => ClipRRect(borderRadius: BorderRadius.circular(3), child: Image.network(url, fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.grey[800])));
+  Widget _buildCardImage(String url) => ClipRRect(borderRadius: BorderRadius.circular(3), child: Image.network(ApiService.fixUrl(url), fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.grey[800])));
 
   Widget _buildSearchArea() {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -648,7 +650,7 @@ class _DecksPageState extends State<DecksPage> {
                   itemCount: _searchResults.length,
                   itemBuilder: (context, index) {
                     final card = _searchResults[index];
-                    return GestureDetector(onTap: () => _addCardToDeck(card), child: Container(decoration: BoxDecoration(border: Border.all(color: Colors.black, width: 1), borderRadius: BorderRadius.circular(3)), child: ClipRRect(borderRadius: BorderRadius.circular(2), child: Image.network(card.imageUrl, fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.grey)))));
+                    return GestureDetector(onTap: () => _addCardToDeck(card), child: Container(decoration: BoxDecoration(border: Border.all(color: Colors.black, width: 1), borderRadius: BorderRadius.circular(3)), child: ClipRRect(borderRadius: BorderRadius.circular(2), child: Image.network(ApiService.fixUrl(card.imageUrl), fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.grey)))));
                   },
                 ),
               ),

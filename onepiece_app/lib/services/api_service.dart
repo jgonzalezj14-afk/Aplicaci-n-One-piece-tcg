@@ -5,7 +5,21 @@ import '../models/card_model.dart';
 
 class ApiService {
   static String get baseUrl {
-    return "https://onepiece-builder.onrender.com";
+    if (kDebugMode) {
+      if (kIsWeb) return "http://localhost:6090";
+      return "http://10.0.2.2:6090";
+    }
+    
+    return ""; 
+  }
+
+  static String fixUrl(String url) {
+    if (kIsWeb && url.isNotEmpty && !url.contains("proxy_image")) {
+      String prefix = baseUrl.isEmpty ? "" : baseUrl;
+      return "$prefix/proxy_image?url=${Uri.encodeComponent(url)}";
+    }
+    return url;
+    
   }
 
   Future<Map<String, dynamic>> getCardsPaginated({
@@ -28,7 +42,10 @@ class ApiService {
     if (set != null && !set.startsWith('All')) queryParams['set'] = set;
     if (cost != null && !cost.startsWith('All')) queryParams['cost'] = cost;
 
-    final uri = Uri.parse('$baseUrl/onepiece').replace(queryParameters: queryParams);
+    String finalUrl = '$baseUrl/onepiece';
+    if (baseUrl.isEmpty) finalUrl = '/onepiece'; 
+
+    final uri = Uri.parse(finalUrl).replace(queryParameters: queryParams);
 
     try {
       final response = await http.get(uri);
@@ -41,7 +58,7 @@ class ApiService {
         final List<CardModel> cards = dataList.map((e) => CardModel.fromJson(e)).toList();
         return {'cards': cards, 'totalPages': totalPages};
       } else {
-        debugPrint('Error API: ${response.statusCode} - ${response.body}');
+        debugPrint('Error API: ${response.statusCode}');
         throw Exception('Error API: ${response.statusCode}');
       }
     } catch (e) {
@@ -54,7 +71,10 @@ class ApiService {
     if (ids.isEmpty) return [];
     
     final idsString = ids.join(',');
-    final uri = Uri.parse('$baseUrl/onepiece').replace(queryParameters: {'ids': idsString, 'pageSize': '100'});
+    String finalUrl = '$baseUrl/onepiece';
+    if (baseUrl.isEmpty) finalUrl = '/onepiece';
+
+    final uri = Uri.parse(finalUrl).replace(queryParameters: {'ids': idsString, 'pageSize': '100'});
     
     try {
       final response = await http.get(uri);
@@ -71,7 +91,10 @@ class ApiService {
   }
 
   Future<CardModel?> getRandomCard() async {
-    final uri = Uri.parse('$baseUrl/random_card');
+    String finalUrl = '$baseUrl/random_card';
+    if (baseUrl.isEmpty) finalUrl = '/random_card';
+
+    final uri = Uri.parse(finalUrl);
     try {
       final response = await http.get(uri);
       if (response.statusCode == 200) {

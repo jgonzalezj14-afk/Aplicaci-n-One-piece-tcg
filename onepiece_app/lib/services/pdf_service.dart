@@ -8,6 +8,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/card_model.dart';
 import '../models/deck_model.dart';
+import 'api_service.dart';
 
 class PdfService {
   
@@ -46,15 +47,7 @@ class PdfService {
           batchFutures.add(Future(() async {
             var card = allCardsToPrint[j];
             try {
-              String url = card.imageUrl;
-              
-              if (kIsWeb) {
-                if (url.contains('?')) {
-                  url += "&t=${DateTime.now().millisecondsSinceEpoch}";
-                } else {
-                  url += "?t=${DateTime.now().millisecondsSinceEpoch}";
-                }
-              }
+              String url = ApiService.fixUrl(card.imageUrl);
 
               final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
               

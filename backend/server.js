@@ -1,6 +1,7 @@
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
+const path = require("path");
 require("dotenv").config();
 
 const app = express();
@@ -14,6 +15,8 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get("/proxy_image", async (req, res) => {
   const { url } = req.query;
@@ -39,7 +42,7 @@ app.get("/proxy_image", async (req, res) => {
     res.send(response.data);
 
   } catch (error) {
-    res.status(404).send("Imagen no encontrada");
+    res.status(404).send("Error imagen");
   }
 });
 
@@ -67,9 +70,7 @@ app.get("/random_card", async (req, res) => {
     const isNativeApp = userAgent.includes('Dart');
 
     if (!isNativeApp && randomCard.card_image) {
-        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-        const host = req.get('host');
-        const baseUrl = `${protocol}://${host}`;
+        const baseUrl = ""; 
         randomCard.card_image = `${baseUrl}/proxy_image?url=${encodeURIComponent(randomCard.card_image)}`;
     }
 
@@ -77,7 +78,7 @@ app.get("/random_card", async (req, res) => {
     res.json(randomCard);
 
   } catch (error) {
-    res.status(500).json({ error: "Fallo al generar carta" });
+    res.status(500).json({ error: "Error servidor" });
   }
 });
 
@@ -99,10 +100,6 @@ app.get("/onepiece", async (req, res) => {
     const userAgent = req.headers['user-agent'] || '';
     const isNativeApp = userAgent.includes('Dart');
     
-    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-    const host = req.get('host');
-    const baseUrl = `${protocol}://${host}`;
-
     rawCards = rawCards.map(card => {
       let originalUrl = card.card_image;
       if (originalUrl && !originalUrl.startsWith("http")) {
@@ -111,6 +108,7 @@ app.get("/onepiece", async (req, res) => {
       
       if (originalUrl) {
           if (!isNativeApp) {
+             const baseUrl = ""; 
              card.card_image = `${baseUrl}/proxy_image?url=${encodeURIComponent(originalUrl)}`;
           } else {
              card.card_image = originalUrl;
@@ -173,6 +171,10 @@ app.get("/onepiece", async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: "Fallo en el servidor" });
   }
+});
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, "0.0.0.0", () => {
