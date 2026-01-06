@@ -4,18 +4,22 @@ import 'package:http/http.dart' as http;
 import '../models/card_model.dart';
 
 class ApiService {
+  static const String _prodUrl = "https://onepiece-builder.onrender.com";
+
   static String get baseUrl {
     if (kIsWeb) {
-      return kDebugMode ? "http://localhost:6090" : "";
+      return kDebugMode ? "http://localhost:6090" : _prodUrl;
     } else {
-      return "https://onepiece-builder.onrender.com";
+      return _prodUrl;
     }
   }
 
   static String fixUrl(String url) {
     if (kIsWeb && url.isNotEmpty && !url.contains("proxy_image")) {
-      String prefix = baseUrl.isEmpty ? "" : baseUrl;
-      return "$prefix/proxy_image?url=${Uri.encodeComponent(url)}";
+      String host = baseUrl; 
+      if (host.isEmpty) host = _prodUrl; 
+      
+      return "$host/proxy_image?url=${Uri.encodeComponent(url)}";
     }
     return url;
   }
@@ -40,14 +44,9 @@ class ApiService {
     if (set != null && !set.startsWith('All')) queryParams['set'] = set;
     if (cost != null && !cost.startsWith('All')) queryParams['cost'] = cost;
 
-    String urlBase = baseUrl;
-    if (urlBase.isEmpty) { 
-       urlBase = "/onepiece"; 
-    } else {
-       urlBase = "$urlBase/onepiece";
-    }
-
-    final uri = Uri.parse(urlBase).replace(queryParameters: queryParams);
+    String endpoint = "$baseUrl/onepiece";
+    
+    final uri = Uri.parse(endpoint).replace(queryParameters: queryParams);
 
     try {
       final response = await http.get(uri);
@@ -73,15 +72,7 @@ class ApiService {
     if (ids.isEmpty) return [];
     
     final idsString = ids.join(',');
-    
-    String urlBase = baseUrl;
-    if (urlBase.isEmpty) { 
-       urlBase = "/onepiece"; 
-    } else {
-       urlBase = "$urlBase/onepiece";
-    }
-
-    final uri = Uri.parse(urlBase).replace(queryParameters: {'ids': idsString, 'pageSize': '100'});
+    final uri = Uri.parse("$baseUrl/onepiece").replace(queryParameters: {'ids': idsString, 'pageSize': '100'});
     
     try {
       final response = await http.get(uri);
@@ -98,14 +89,7 @@ class ApiService {
   }
 
   Future<CardModel?> getRandomCard() async {
-    String urlBase = baseUrl;
-    if (urlBase.isEmpty) { 
-       urlBase = "/random_card"; 
-    } else {
-       urlBase = "$urlBase/random_card";
-    }
-
-    final uri = Uri.parse(urlBase);
+    final uri = Uri.parse("$baseUrl/random_card");
     try {
       final response = await http.get(uri);
       if (response.statusCode == 200) {

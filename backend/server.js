@@ -1,7 +1,7 @@
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
-const path = require("path");
+const path = require("path"); 
 require("dotenv").config();
 
 const app = express();
@@ -15,7 +15,6 @@ app.use(cors({
 }));
 
 app.use(express.json());
-
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get("/proxy_image", async (req, res) => {
@@ -66,19 +65,11 @@ app.get("/random_card", async (req, res) => {
         randomCard.card_image = API_BASE_URL + randomCard.card_image;
     }
     
-    const userAgent = req.headers['user-agent'] || '';
-    const isNativeApp = userAgent.includes('Dart');
-
-    if (!isNativeApp && randomCard.card_image) {
-        const baseUrl = ""; 
-        randomCard.card_image = `${baseUrl}/proxy_image?url=${encodeURIComponent(randomCard.card_image)}`;
-    }
-
     if (!randomCard.versions) randomCard.versions = [];
     res.json(randomCard);
 
   } catch (error) {
-    res.status(500).json({ error: "Error servidor" });
+    res.status(500).json({ error: "Fallo al generar carta" });
   }
 });
 
@@ -97,23 +88,12 @@ app.get("/onepiece", async (req, res) => {
     if (setsRes.status === 'fulfilled') rawCards = rawCards.concat(setsRes.value.data);
     if (startersRes.status === 'fulfilled') rawCards = rawCards.concat(startersRes.value.data);
 
-    const userAgent = req.headers['user-agent'] || '';
-    const isNativeApp = userAgent.includes('Dart');
-    
     rawCards = rawCards.map(card => {
       let originalUrl = card.card_image;
       if (originalUrl && !originalUrl.startsWith("http")) {
         originalUrl = API_BASE_URL + originalUrl;
       }
-      
-      if (originalUrl) {
-          if (!isNativeApp) {
-             const baseUrl = ""; 
-             card.card_image = `${baseUrl}/proxy_image?url=${encodeURIComponent(originalUrl)}`;
-          } else {
-             card.card_image = originalUrl;
-          }
-      }
+      card.card_image = originalUrl;
       return card;
     });
 
