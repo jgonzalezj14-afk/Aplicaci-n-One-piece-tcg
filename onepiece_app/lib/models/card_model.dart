@@ -1,3 +1,4 @@
+import '../services/api_service.dart';
 class CardModel {
   final String id;
   final String name;
@@ -171,7 +172,9 @@ class CardModel {
       name: json['card_name'] ?? 'Sin nombre',
       type: json['card_type'] ?? 'Desconocido',
       color: json['card_color'] ?? 'N/A',
-      imageUrl: json['card_image'] ?? '',
+      
+      imageUrl: ApiService.fixUrl(json['card_image'] ?? ''),
+      
       cardNumber: json['card_set_id']?.toString() ?? '???',
       rarity: json['rarity'] ?? 'N/A',
       power: rawPower?.toString() ?? '-',
