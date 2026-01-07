@@ -183,7 +183,7 @@ class _HomePageState extends State<HomePage> {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(10),
                                 child: Image.network(
-                                  _randomCard!.imageUrl,
+                                  'https://images.weserv.nl/?url=${_randomCard!.imageUrl}',
                                   height: 450, 
                                   fit: BoxFit.contain,
                                   errorBuilder: (c,e,s) => Container(width: 300, height: 450, color: Colors.grey[900], child: const Icon(Icons.broken_image, color: Colors.white, size: 50)),
@@ -237,7 +237,7 @@ class _HomePageState extends State<HomePage> {
                 child: ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(10)), 
                   child: Image.network(
-                      card.imageUrl, 
+                      'https://images.weserv.nl/?url=${card.imageUrl}', 
                       fit: BoxFit.cover, 
                       errorBuilder: (c, e, s) => Container(color: Colors.grey[900], child: const Icon(Icons.person, size: 60, color: Colors.white24))
                   )

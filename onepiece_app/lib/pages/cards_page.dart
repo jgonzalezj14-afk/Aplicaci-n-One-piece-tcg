@@ -148,7 +148,16 @@ class _CardsPageState extends State<CardsPage> {
             child: Hero(
               tag: card.id,
               child: Container(
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), boxShadow: [const BoxShadow(color: Colors.black54, blurRadius: 4, offset: Offset(2, 2))], image: DecorationImage(image: NetworkImage(card.imageUrl), fit: BoxFit.cover, onError: (e,s) {}), color: Colors.grey[800]),
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8), 
+                    boxShadow: [const BoxShadow(color: Colors.black54, blurRadius: 4, offset: Offset(2, 2))], 
+                    image: DecorationImage(
+                        image: NetworkImage('https://images.weserv.nl/?url=${card.imageUrl}'), 
+                        fit: BoxFit.cover, 
+                        onError: (e,s) {}
+                    ), 
+                    color: Colors.grey[800]
+                ),
                 child: Stack(children: [if (card.versions.isNotEmpty) Positioned(top: 4, right: 4, child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle), child: Text("+${card.versions.length}", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)))), Positioned(bottom: 0, left: 0, right: 0, child: Container(padding: const EdgeInsets.symmetric(vertical: 2), color: Colors.black.withOpacity(0.7), child: Text(card.name, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, decoration: TextDecoration.none))))]),
               ),
             ),
