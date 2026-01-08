@@ -230,10 +230,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildCollectionCard(String code, String name, String imagePath) {
+    final bool isAvailable = code == "PRB-02";
+    
     return Container(
       width: 260,
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF5D4037), width: 2), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 6)], image: DecorationImage(image: AssetImage(imagePath), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.4), BlendMode.darken)), color: Colors.grey[800]),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Text(code, style: TextStyle(color: _goldColor, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: 2, shadows: const [Shadow(color: Colors.black, blurRadius: 10)])), const SizedBox(height: 5), Text(name, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, shadows: [Shadow(color: Colors.black, blurRadius: 10)])), const SizedBox(height: 15), Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: _pirateRed, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white30)), child: const Text("PRÓXIMAMENTE", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)))]),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Text(code, style: TextStyle(color: _goldColor, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: 2, shadows: const [Shadow(color: Colors.black, blurRadius: 10)])), const SizedBox(height: 5), Text(name, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, shadows: [Shadow(color: Colors.black, blurRadius: 10)])), const SizedBox(height: 15), Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: isAvailable ? Colors.blue : _pirateRed, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white30)), child: Text(isAvailable ? "YA DISPONIBLE" : "PRÓXIMAMENTE", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)))]),
     );
   }
 }

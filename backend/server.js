@@ -124,7 +124,7 @@ app.get("/onepiece", async (req, res) => {
     }
     if (name) cards = cards.filter(c => c.card_name?.toLowerCase().includes(name.trim().toLowerCase()));
     if (cost && cost !== 'All') cards = cards.filter(c => c.card_cost?.toString() === cost.toString());
-    if (color && color !== 'All') cards = cards.filter(c => c.card_color?.toLowerCase() === color.toLowerCase());
+    if (color && color !== 'All') cards = cards.filter(c => c.card_color?.toLowerCase().includes(color.toLowerCase()));
     if (type && type !== 'All') cards = cards.filter(c => c.card_type?.toLowerCase() === type.toLowerCase());
     if (set && set !== 'All' && set !== 'All Sets') {
       const s = set.toUpperCase().trim().replace('-', '');
